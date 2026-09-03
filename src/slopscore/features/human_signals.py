@@ -18,8 +18,10 @@ from slopscore.features.base import per_hundred_words, register, saturating
 from slopscore.models import Dimension, FeatureResult
 
 # Plain past-tense verbs LLMs tend to dress up (wrote->authored, used->utilized, tried->attempted).
+# "told" excludes "truth be told": that span is penalized by CANDOR_DISCLOSURE_MARKER, and a slop
+# rule and this reward must never fire on the same characters.
 _PLAIN_VERBS = re.compile(
-    r"\b(?:wrote|used|made|found|showed|told|said|gave|took|went|began|built|tried|"
+    r"\b(?:wrote|used|made|found|showed|(?<!truth be )told|said|gave|took|went|began|built|tried|"
     r"died|moved|bought|sold|won|lost|ran|led|kept|held)\b",
     re.IGNORECASE,
 )
@@ -35,8 +37,10 @@ _HEDGES = re.compile(
     r"a (?:bit|little)|sort of|kind of)\b",
     re.IGNORECASE,
 )
-# Concrete numbers, years, measurements, money.
-_CONCRETE = re.compile(r"\b\d[\d,.]*\b|\$\d|\b(?:19|20)\d{2}\b")
+# Concrete numbers, years, measurements, money. One alternative: a digit run already covers
+# years and the digits after a currency sign (the old "$\d" and year alternatives were
+# unreachable because the first branch consumed them).
+_CONCRETE = re.compile(r"\b\d[\d,.]*\b")
 
 # Rate (per 100 words) of combined human markers at which the signal saturates.
 _FULL_SCALE_PER_100 = 6.0

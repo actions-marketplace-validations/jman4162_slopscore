@@ -8,6 +8,8 @@ _DIMENSION_LABELS: dict[str, str] = {
     Dimension.lexical_markers.value: "AI-marker phrase density",
     Dimension.formulaic_structure.value: "Formulaic structure",
     Dimension.significance_inflation.value: "Significance inflation",
+    Dimension.insight_signaling.value: "Insight signaling / pseudo-profundity",
+    Dimension.performative_candor.value: "Performative candor / manufactured sincerity",
     Dimension.superficial_analysis.value: "Superficial '-ing' analysis",
     Dimension.weasel_attribution.value: "Vague / over-attribution",
     Dimension.parallelism.value: "Negative parallelism / rule of three",
@@ -17,6 +19,7 @@ _DIMENSION_LABELS: dict[str, str] = {
     Dimension.cadence_sameness.value: "Cadence sameness",
     Dimension.unsupported_claims.value: "Unsupported claims",
     Dimension.formatting_tells.value: "Formatting tells (weak)",
+    Dimension.structure_tells.value: "Structure tells: chatbot Markdown shape (weak)",
     Dimension.prompt_residue.value: "Prompt residue",
     Dimension.human_writing_signals.value: "Human-writing signals (lowers score)",
 }
@@ -48,8 +51,9 @@ def to_markdown(report: Report) -> str:
         lines.append("_No pattern matches._")
     for e in report.evidence[:50]:
         snippet = e.span.replace("\n", " ").strip()
+        tag = ", summary" if e.is_summary else ""
         lines.append(
-            f"- `{e.rule_id}` ({e.severity.value}, chars {e.start_char}-{e.end_char}): "
+            f"- `{e.rule_id}` ({e.severity.value}{tag}, chars {e.start_char}-{e.end_char}): "
             f'"{snippet}" — {e.explanation}'
         )
 

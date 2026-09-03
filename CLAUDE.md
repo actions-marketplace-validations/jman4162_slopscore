@@ -15,10 +15,17 @@ uv run --no-sync ruff check . && uv run --no-sync ruff format --check .   # lint
 uv run --no-sync mypy src        # type check (strict)
 ```
 
-**Install stability:** `uv sync` installs the project NON-editable and the rebuild can land in a
-broken namespace state (`slopscore.__file__` becomes `None` → `ModuleNotFoundError`). Do an
-editable install once (`uv pip install -e . --no-deps`) and use `uv run --no-sync` so uv does not
-re-sync and clobber it. pytest is insulated regardless via `pythonpath = ["src"]` in pyproject.
+**Install stability:** if `import slopscore` yields an empty namespace package
+(`slopscore.__file__` is `None`, `ModuleNotFoundError: slopscore.cli`), the cause is almost always
+the macOS hidden flag on the venv's `.pth` files: CPython 3.12.13+ and 3.13 skip hidden `.pth`
+files (`uv run python -v -c pass 2>&1 | grep pth` shows "Skipping hidden .pth file"), files under a
+synced `Documents` folder acquire the flag, and the force-included eval datasets under
+`site-packages/slopscore/data/eval/` then resolve as a namespace package. `chflags nohidden
+.venv/lib/python3.12/site-packages/*.pth` fixes it, but the flag has been observed to return within
+minutes on this machine, so the dependable form is `PYTHONPATH=src uv run --no-sync python -m
+slopscore.cli ...` (no `.pth` involved). Reinstall with `uv pip install -e . --no-deps` if the
+`.pth` is gone; use `uv run --no-sync` so uv does not re-sync a non-editable copy. pytest is
+insulated regardless via `pythonpath = ["src"]` in pyproject.
 
 Optional features live behind extras: `[web]` (trafilatura), `[nlp]` (spaCy + sentence-transformers),
 `[lang]` (lingua). Default install is lean; `scan <url>` without `[web]` exits 3 with a hint. For
@@ -49,30 +56,45 @@ Key invariants when extending:
   `OffsetMapper`. The round-trip is enforced across the feature tests — keep it green.
 - **`TextSpan` lives in `spans.py`** (not `document.py`) to avoid a normalize↔document import cycle.
 - **Conservatism is in the scorer, not the features.** `scoring/scorer.py` applies a corroboration
-  gate (`WEAK_DIMENSIONS` damped when they fire alone), `human_writing_signals` enters with a
-  NEGATIVE weight, and `scoring/confidence.py:abstain_reason` caps the label at "mild" on short/
-  non-English input. Don't make individual features "conservative" — let the scorer do it.
+  gate: every `WEAK_DIMENSION` is damped (x0.3) unless the strongest `CORROBORATING_DIMENSION`
+  (strong AND span-backed; never genericity/cadence/redundancy/human) is elevated, ramping to full
+  weight between 0.25 and 0.5 (`weights.py:weak_gate`). The score is continuous and non-decreasing
+  in every dimension; keep it that way. `human_writing_signals` enters with a NEGATIVE weight
+  (unscaled by strictness); `STRICTNESS_GAIN` scales only the positive evidence sum, never the
+  bias; `scoring/confidence.py:abstain_reason` caps the label at "mild" on short/non-English
+  input. Don't make individual features "conservative" — let the scorer do it.
+- **Filter, then score.** Span-backed features implement `SpanScored.score_spans` (`features/
+  base.py`) and route `extract` through it, so `score_spans(all_spans) == extract().score`. The
+  scorer drops disabled/suppressed spans and applies severity overrides BEFORE computing `by_dim`
+  (`scorer.py:_extract_filtered`). A new rule-driven feature must implement `score_spans` and
+  `rule_ids` (the latter feeds `features/catalog.py`, which validates suppression names).
 - **Rule data is YAML** under `src/slopscore/data/` (force-included into the wheel). `patterns/` is
   organized into category subdirs loaded by `_ruleset.load_rules_from_directory`; `lexicons/markers.yaml`
   carries `era`/`source` tags. The spaCy path lives behind `features/_nlp.py`.
-- Dimensions: lexical_markers, formulaic_structure, significance_inflation, superficial_analysis,
-  weasel_attribution, parallelism, copula_avoidance, genericity, redundancy, cadence_sameness,
-  formatting_tells (weak), prompt_residue, human_writing_signals (negative). unsupported_claims has
-  no feature yet (contributes 0).
+- Dimensions: lexical_markers, formulaic_structure, significance_inflation, insight_signaling,
+  performative_candor (weak), superficial_analysis, weasel_attribution, parallelism,
+  copula_avoidance, genericity, redundancy, cadence_sameness, formatting_tells (weak),
+  structure_tells (weak, v0.13: Markdown block shape from `Document.blocks`),
+  prompt_residue, human_writing_signals (negative). `genericity`, `cadence_sameness`, `redundancy`,
+  and `human_writing_signals` are STATISTICAL (no spans, low weight, never corroborate).
+  `insight_signaling` (v0.7) and `performative_candor` (v0.9) are rules-only — deliberately
+  excluded from the ML `FEATURE_ORDER`, so they need no model retrain.
 - **Personal baseline:** `scoring/calibrate.py` builds robust per-dimension stats from a corpus;
   `scan --baseline <name>` attaches z-score deviations. Profiles (`scoring/profiles.py`) are hand-set
   (see `PROFILE_NOTES.md`); citations + fairness caveats live in `MODEL_CARD.md`.
 
 Scoring engines (v0.3): `scoring/scorer.py` dispatches on `Settings.scorer` (`Scorer.rules` default
 vs `Scorer.ml`). The ML path (`scoring/model.py`) is a pure-numpy logistic model loaded from
-`data/model/slopscore-v0.3.json` over `FEATURE_ORDER`; sign-constrained (slop dims ≥0, human signal
+`data/model/slopscore-v0.5.json` over `FEATURE_ORDER`; sign-constrained (slop dims ≥0, human signal
 ≤0), Platt-calibrated. The corroboration gate is rules-only; abstention applies to both. Train with
 `scripts/eval/train.py` (sklearn+scipy, OOF metrics); evaluate with `slopscore-lint eval` / the
 `slopscore.eval/` package (metrics, fairness, selective, span_metrics). Promotion is gated by
 `eval/harness.py:should_promote` (TPR@1%FPR + no subgroup-FPR regression) — currently rules wins, so
 ML stays opt-in. Eval data: `eval/datasets/seed.jsonl` (committed) + `scripts/eval/fetch.py` (large
 corpora, not committed); licensing in `DATA_SOURCES.md`. **Never train the shipped model on NC data;
-never import sklearn at scan time** (the ML path is numpy-only).
+never import sklearn at scan time** (the ML path and `features/redundancy.py` are numpy-only;
+scikit-learn is the `[eval]` extra and `tests/test_redundancy_numpy.py` asserts it stays out of the
+scan path).
 
 Linter maturity (v0.4): `config_file.py` loads `slopscore.toml`/`[tool.slopscore]` via `tomllib`
 (precedence CLI > slopscore.toml > pyproject > defaults; `resolve_settings` merges, `Settings`
@@ -98,6 +120,56 @@ reports per-rule false-positive rate on the `simple_english`/`non_native` benchm
 model retrain, no XGBoost/GBDT (features are the ceiling, not the model class; trees break the
 numpy-only path + transparency + fairness). The `[nlp]` feature work (NER genericity, semantic
 redundancy, burstiness) is the v0.7 roadmap.
+
+Insight-signaling (v0.7): a new `insight_signaling` dimension flags pseudo-profundity tells that
+announce insight rather than contain it ("load-bearing", "doing the real work", "the crux of the
+issue", "pressure-test the claim") — a distinct phenomenon from the WP:AILEGACY puffery in
+`significance_inflation`. Core rules (`data/patterns/insight_signaling/`, context-gated so literal
+uses like "load-bearing wall" are safe) score by default; an opt-in broad tier
+(`data/patterns/insight_signaling_broad/`, enabled by `--broad` / `[tool.slopscore] broad`) adds
+rationalist/essayist jargon (steelman, epistemic humility, first principles) that is legitimate in
+philosophy/tech writing and so carries higher FPR. `--broad` re-scores the dimension over core+broad
+in `scorer.py` (mirrors the `settings.suggest` special-case), so it affects the score, evidence, and
+`--fail-on`. The dimension is **rules-only**: it is excluded from the ML `FEATURE_ORDER`, so the
+committed model needs no retrain (`--scorer ml` computes but ignores it). Antithesis coverage in
+`parallelism` gained "not merely X but Y", "less about X, more about Y", the non-'it' em-dash
+variant, and the "both/and" reframe. Genre profiles boost insight_signaling in essay/blog/social and
+soften it in academic/technical.
+
+Weasel words (v0.7): the complementary axis — slop phrases signal fake *insight*,
+`weasel_attribution` signals fake *evidence*. The existing dimension was expanded (data-only) with
+impersonal-passive attribution (`attribution/impersonal.yaml`: "it is widely believed", "sources
+say", passive dodges), unearned-certainty "reasoning smells" (`attribution/certainty.yaml`:
+clause-initial "Clearly,"/"Obviously,", "needless to say", "it goes without saying" — classic
+WP:AIWEASEL weasels), and hedge+vague-adjective (`attribution/hedging.yaml`: "somewhat successful").
+Bare quantifiers/hedges/intensifiers (many/very/may) are **`--broad`-only**
+(`data/patterns/attribution_broad/`): they have no discriminative power on the ESL/simple-English
+fairness slices (they appear in both clean and slop rows), so flagging them by default would
+over-flag exactly the protected population. The broad tier deliberately EXCLUDES the hedges
+`human_signals.py` rewards as a positive human signal (perhaps/maybe/arguably/likely) so the two
+dimensions never contradict. The `--broad` mechanism was generalized: `features/phrase_packs.py`
+exposes `broad_packs()` and `scorer.py` re-scores every broad-capable pack (insight_signaling and
+weasel_attribution today). Bureaucratese (utilize/facilitate/"due to the fact that") stays advisory
+in `--suggest`; `ascertain` was added there. Prose-fiction frequency tics (just/that/really) are a
+deliberate non-goal — per-author frequency, not a static list (a future `calibrate.py` baseline
+feature).
+
+Performative candor (v0.9): the third axis after fake insight (`insight_signaling`) and fake
+evidence (`weasel_attribution`) — fake *vulnerability*. `performative_candor` flags a point framed
+as a difficult confession ("I have to be honest", "truth be told", "let me be candid"), a sincerity
+adjective on an abstract noun ("honest framing", "honest limits" for "limitations"), clause-initial
+"Honestly,"/"Frankly," (comma required), the `genuinely interesting` collocation, and manufactured
+reluctance ("I don't say this lightly"). Rules in `data/patterns/performative_candor/`; bare
+sincerity adverbs are `--broad`-only in `performative_candor_broad/`. **It is a separate dimension
+specifically because the genre multipliers invert** — `social` is 0.6 here vs 1.15 for
+insight_signaling, `marketing` 1.2 vs 0.9 — so folding these rules into insight_signaling would
+boost the genre where "honestly" is legitimate human speech. `full_scale` is 4.0 (not the usual
+3.0) because at 3.0 a single low-severity hit in a 60-word doc crosses the corroboration gate.
+Weak-alone, which means concrete first-person prose with heavy candor filler deliberately scores
+low (see the MODEL_CARD limitation). The comma requirement in `CANDOR_ADVERB_PARENTHETICAL` is what
+keeps the ESL calques "Honestly speaking"/"Frankly speaking" quiet — do not relax it. Do not add
+"Sincerely,"/"Truly," to that rule: patterns compile under MULTILINE, so `^` matches every line
+start and they would fire on email sign-offs.
 
 ## Project state
 

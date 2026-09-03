@@ -15,7 +15,7 @@ generic, low-specificity, over-polished writing patterns associated with low-eff
 It reports per-dimension scores and **evidence spans** (the exact phrases that triggered each
 finding), so you can see and fix what it flags.
 
-**Try it in your browser:** [slopscore.john-hodge.com](https://slopscore.john-hodge.com). Paste prose and get the score with evidence spans, no install.
+**Try it in your browser:** [slopscore.mountsilabs.com](https://slopscore.mountsilabs.com). Paste prose and get the score with evidence spans, no install.
 
 > ### ⚠️ What slopscore is NOT
 > It does **not** detect whether text was written by AI, and must never be used to accuse a writer.
@@ -38,7 +38,10 @@ not
 > "This was written by AI."
 
 Think of it as a linter for slop, closer to Vale or ruff than to a black-box AI detector.
-Every point in the score comes from a visible rule with an evidence span.
+Rule-driven dimensions carry an evidence span for every hit. The four statistical dimensions
+(genericity, cadence, redundancy, and the human-signal counterweight) are low-weighted, never
+corroborate a weak tell, and point at the passage that drove them with a labeled summary span;
+the JSON `breakdown` attributes every point of the score to a dimension.
 
 ## Install
 
@@ -71,7 +74,7 @@ Evidence (26 findings; each line has a char offset, severity, and explanation):
   152  WEASEL_EXPERTS_ARGUE        medium  "Experts argue"
 ```
 
-Every point in the score traces to a rule and the span that triggered it. `scan` returns exit code
+Every finding traces to a rule and the span that triggered it. `scan` returns exit code
 `1` when findings reach the `--fail-on` threshold, so it drops into CI unchanged:
 
 ```bash
@@ -90,7 +93,8 @@ slopscore-lint scan https://example.com/post        # requires slopscore-lint[we
 slopscore-lint scan src/app.py                       # lints docstring/comment prose, ignores code
 slopscore-lint scan post.md --by-paragraph           # surfaces a sloppy section in a clean doc
 slopscore-lint scan draft.md --suggest               # adds advisory rewrite suggestions
-slopscore-lint explain                               # what each of the 14 dimensions detects
+slopscore-lint scan essay.md --broad                 # opt-in tier: rationalist jargon + bare weasel words
+slopscore-lint explain                               # what each of the 16 dimensions detects
 ```
 
 ### Lint the prose inside code
@@ -152,7 +156,7 @@ slopscore-lint scan post.md --format html -o report.html          # highlighted-
 ```yaml
 repos:
   - repo: https://github.com/jman4162/slopscore
-    rev: v0.7.0
+    rev: v0.13.0
     hooks:
       - id: slopscore-lint
         args: ["--fail-on", "high"]
@@ -241,6 +245,44 @@ for f in Path("posts").glob("*.md"):
 ```
 
 ## Status
+
+v0.13: detection coverage. A `structure_tells` dimension scores the chatbot Markdown shape
+(emoji headings, `**Label:** text` bullet runs, heading-level jumps, rules between every section,
+heavy bold) from block metadata the Markdown ingester now records; pasted text that looks like
+Markdown is ingested as Markdown, so emphasis markers no longer hide phrases. Quoted speech is
+skipped by the candor, claims, and attribution packs. Twelve new phrase rules cover the connective
+filler and chatbot residue the review found missing ("it's worth noting", "that said", "Great
+question!", vendor citation markup). The human-signal counterweight is capped at half the
+positive evidence, so appended dates and counts cannot erase intact slop.
+
+v0.12: long-form evaluation and thresholds. A committed 180-document set of 300+ words (pre-LLM
+web pages, 2023 Wikipedia, and full Wikipedia articles flagged as suspected AI-generated) and a
+threshold report over 522 human-good documents: clean prose sits under 11 at P95 under every
+profile, so `score_threshold = 25` gives a 1% false-positive rate ([docs](https://jman4162.github.io/slopscore/thresholds/)).
+Recall on flagged Wikipedia articles at that cutoff is 1%, stated plainly.
+
+v0.11: every point explained. Reports carry a per-dimension `breakdown`, the statistical
+dimensions emit labeled summary spans, and CI can gate on the score (`--fail-on-score`,
+`score_threshold`) instead of evidence severity alone. Config `fail_on`, `suggest`, `include`,
+and `exclude` are honored.
+
+v0.10: score correctness from an adversarial review. Silenced rules lose their points, the
+corroboration gate is monotone, strictness is no longer inverted on clean text, genericity no
+longer reads abstract human prose as slop, prompt residue decays in long documents, scikit-learn
+left the scan path, and eight rule bugs were fixed.
+
+v0.9: `performative_candor`, a third rule-driven axis after fake insight and fake evidence: points
+framed as difficult confessions ("I have to be honest", "truth be told"), sincerity adjectives on
+abstract nouns, and manufactured reluctance. Kept as its own dimension because its genre
+multipliers invert relative to `insight_signaling`. v0.9.2 hardened the GitHub Action against
+input injection, made `--fail-on-new` without a baseline a usage error, gave `--diff` a clean
+exit on a bad ref, stopped scoring GFM tables as prose, and added a Python matrix, an extras job,
+and a wheel-install smoke test to CI.
+
+v0.8: `insight_signaling` for pseudo-profundity that announces insight rather than containing it
+("load-bearing", "the crux of the issue", "pressure-test the claim"), with an opt-in `--broad`
+tier for rationalist jargon; the weasel dimension gained impersonal-passive attribution and
+unearned-certainty openers; `slopscore-lint explain` documents every rule.
 
 v0.7: accuracy and robustness. Fixed a false "severe" on Markdown posts with code blocks (the code
 fences inflated `prompt_residue` when ingested as text). The `[nlp]` extra now genuinely upgrades two

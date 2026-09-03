@@ -4,8 +4,9 @@
 
 slopscore scores text for **AI-slop writing patterns**, formulaic, generic, low-specificity,
 over-polished prose, and returns a 0-100 SlopScore with per-dimension breakdowns and evidence
-spans. It is a transparent rule engine: every point comes from a visible rule with a quotable
-span. It does **not** determine authorship.
+spans. It is a transparent rule engine: every finding comes from a visible rule with a quotable
+span, and the four span-less statistical dimensions (genericity, cadence, redundancy, human
+signals) are low-weighted and reported per dimension. It does **not** determine authorship.
 
 ## What it is not
 
@@ -105,12 +106,34 @@ LightGBM**: it needs trees at scan time (breaking the pure-numpy path), and opti
 authorship labels would turn slopscore into an authorship detector, the one thing it refuses to be. The **shipped model stays the seed-trained, slop-labeled LR**, and
 the **rule scorer stays the default**. The shipped model is never trained on MAGE.
 
+## v0.10 to v0.13: score correctness, long-form evaluation, and structure tells
+
+An adversarial review (September 2026) found that silenced rules kept their points, the
+corroboration gate was non-monotone, strictness was inverted on clean text, and the genericity
+dimension read abstract human prose as slop. v0.10 fixed those (`CHANGELOG.md`), v0.11 added a
+per-dimension `breakdown` and summary evidence for the statistical dimensions, and v0.12 added
+the first long-form evaluation and data-derived thresholds; v0.13 added the `structure_tells`
+dimension (chatbot Markdown shape), quote-aware sincerity and sourcing rules, and a cap on the
+human-signal counterweight. Current numbers (`eval/RESULTS.md`):
+
+| set | n | AUROC | PR-AUC | TPR@1%FPR |
+|---|---:|---:|---:|---:|
+| benchmark (13-40 words, in-sample) | 141 | 0.87 | 0.89 | 0.57 |
+| long-form (300+ words, committed, eval-only) | 180 | 0.71 | 0.59 | 0.13 |
+| Wikipedia AI-Cleanup, full articles (held-out) | 180 | 0.75 | 0.77 | 0.11 |
+
+Thresholds (`docs/thresholds.md`): on 522 human-good long-form documents, clean prose sits at
+P50 2.4 and P95 about 11 under every profile; `score_threshold = 25` gives a 1% false-positive
+rate. Recall on flagged Wikipedia articles at that cutoff is 1%: their tells are sparse and
+per-100-word rates dilute them. Closing that gap is the v0.13 detection work, not a threshold
+change.
+
 ## v0.5: slop-labeled benchmark
 
 v0.5 adds a real slop-labeled benchmark and retrains the learned scorer on it. Full numbers and
 reproduction are in `eval/RESULTS.md` (`python scripts/eval/report.py`). Two evaluation sets:
 
-- `eval/datasets/benchmark.jsonl` (128 rows): hand-authored, taxonomy-graded (Shaib et al.,
+- `eval/datasets/benchmark.jsonl` (141 rows): hand-authored, taxonomy-graded (Shaib et al.,
   "Measuring AI Slop", arXiv:2509.19163) slop vs clean text, with `simple_english` and `non_native`
   fairness slices. In-sample (overlaps the training seed); measures discrimination on overt slop.
 - Wikipedia AI-Cleanup (40 rows): articles editors flagged as suspected AI-generated vs random
@@ -131,9 +154,12 @@ Per-subgroup false-positive rate on the benchmark, which keeps the rule scorer t
 
 | subgroup | n | rules FPR | ml FPR |
 |---|---|---|---|
-| general | 100 | 0.00 | 0.06 |
-| simple_english | 14 | 0.00 | 0.71 |
-| non_native | 14 | 0.00 | 0.33 |
+| general | 107 | 0.00 | 0.05 |
+| simple_english | 17 | 0.00 | 0.59 |
+| non_native | 17 | 0.00 | 0.27 |
+
+(Current numbers; the v0.5 release reported 100 / 14 / 14 rows and 0.71 / 0.33. A 0.00 rate on
+17 rows has a 95% upper bound near 0.20.)
 
 The learned model, retrained on the benchmark (`slopscore-v0.5.json`), edges the rule scorer on raw
 metrics but over-flags simple and non-native English. The replace-if-wins gate therefore keeps the
@@ -155,6 +181,76 @@ plain and non-native English slices:
 Both are opt-in (`[nlp]`); the default install keeps the regex/TF-IDF paths. A sentence-length
 burstiness signal was tried and reverted: it regressed the non-native slice (FPR 0.00 -> 0.17),
 a reminder that sentence-length features are entangled with non-native style.
+
+v0.7 also adds an **insight_signaling** dimension for pseudo-profundity tells that announce insight
+rather than contain it ("load-bearing", "doing the real work", "the crux of the issue",
+"pressure-test the claim") — borrowed from a higher-prestige essayist/rationalist register and empty
+only at density, which is why the patterns are context-gated (e.g. "load-bearing wall" is not
+flagged) and mostly low/medium severity. It is **rules-only**: excluded from the ML `FEATURE_ORDER`
+so the committed `slopscore-v0.5.json` model needs no retrain (`--scorer ml` computes but ignores
+it). An opt-in broad tier (`--broad`) adds rationalist jargon (steelman, epistemic humility, first
+principles) that is legitimate in philosophy/tech writing; it is off by default because its
+false-positive risk is higher, and its home register is exactly where this jargon is earned.
+**Fairness caveat:** the `simple_english`/`non_native` benchmark slices (plain and ESL prose) do not
+exercise competent native analytical writing, where these phrases legitimately appear; that
+population is guarded instead by concrete-prose negative fixtures in `benchmark.jsonl` and by
+`test_conservatism.py` (a lone insight phrase in long, specific prose stays below "severe").
+
+v0.7 also expands the **weasel_attribution** dimension — the complementary "fake evidence" axis to
+slop's "fake insight". Added (scored by default): impersonal-passive attribution ("it is widely
+believed", "sources say"), unearned-certainty reasoning smells ("Clearly,", "needless to say", "it
+goes without saying" — WP:AIWEASEL classes these as weasel words), and hedge+vague-adjective
+("somewhat successful"). The textbook bare weasels — quantifiers (many/most), hedges (may/might),
+intensifiers (very/really) — are **`--broad`-only** and off by default. That is a deliberate
+fairness decision: in the fairness slices those words appear in *both* clean and slop rows (e.g.
+"very"/"most"), so a default bare-word rule would have no discriminative power and would over-flag
+non-native/simple English — the exact failure the tool exists to avoid. `--broad` reframes them as
+an opt-in self-editing highlighter, not an accusation. The broad tier also excludes the hedges
+`human_signals.py` credits as a positive human signal (perhaps/maybe/arguably/likely), since hedging
+is correct epistemics in calibrated writing; only the *hedge + vague adjective* construction is
+treated as a tell.
+
+v0.9 adds a **performative_candor** dimension for manufactured sincerity: a point framed as a
+difficult confession ("I have to be honest", "truth be told", "let me be candid"), a sincerity
+adjective bolted to an abstract noun ("honest framing", "honest limits" standing in for
+"limitations"), and manufactured reluctance ("I don't say this lightly"). It is the third axis
+alongside the two above: `insight_signaling` flags fake *insight*, `weasel_attribution` fake
+*evidence*, and this one fake *vulnerability*. Like `insight_signaling` it is **rules-only**,
+excluded from the ML `FEATURE_ORDER` so the committed model needs no retrain.
+
+It is a separate dimension rather than extra `insight_signaling` rules because the genre
+multipliers point the opposite way. `insight_signaling` boosts `social` to 1.15; candor sets it to
+**0.6**, because conversational "honestly" and "to be fair" are native human speech, and sets
+`marketing` to 1.2 where `insight_signaling` softens to 0.9, because manufactured sincerity is
+marketing's native failure mode. A shared dimension could not express either.
+
+Two conservatism choices, both measured. The dimension saturates at 4.0 weighted hits per 100
+words rather than the 3.0 the other packs use, because at 3.0 a single low-severity hit in a
+60-word document scores 0.56 and crosses the corroboration gate's threshold. And it is a
+`WEAK_DIMENSION`, so it is damped when it fires alone.
+
+**Known limitation.** That damping means concrete, specific, first-person prose carrying heavy
+candor filler scores low: a 119-word passage firing 13 candor rules scores 5.6, because
+`performative_candor` is the only elevated dimension (damped to 0.3) while `human_writing_signals`
+saturates at 1.0 on its dates and figures. This is deliberate. Such a passage reads as plausible
+human memoir, and the benchmark contains no positive fixture of that shape on purpose — labeling
+it slop would teach the eval set to punish specific writing. The findings are still reported as
+evidence spans; only the composite score stays low. The tells the dimension does catch are candor
+filler over generic prose, which is where it was reported.
+
+**Fairness.** Bare sincerity adverbs (`genuinely`, `honestly` outside a clause opener) are
+`--broad`-only, matching the decision made for bare quantifiers above: they carry no discriminative
+power and appear throughout ESL prose. The core tier's most important property is that ESL calques
+("Honestly speaking", "Frankly speaking") do not fire, because `CANDOR_ADVERB_PARENTHETICAL`
+requires the comma directly after the adverb; `benchmark.jsonl` carries `non_native` rows asserting
+this rather than leaving it to unit tests. One core rule does fire on the protected slices:
+`CANDOR_TO_BE_HONEST` at 0.07 (1/15) on `non_native` and `CANDOR_ADVERB_PARENTHETICAL` at 0.06
+(1/17) on `simple_english`. Both are under the 0.10/0.15 acceptance bars and document-level FPR
+stays 0.00 on both slices, but the rates are published rather than tuned away.
+
+**Gap in the fairness command.** `fairness_cmd` builds `SlopScorer(profile="blog")` with default
+settings, so it never measures the `--broad` tier — and `CANDOR_BROAD_BARE_CANDOR` fires on ESL
+rows by construction. That unmeasured risk is the reason the tier is off by default.
 
 ## v0.6: decided modeling non-goals
 

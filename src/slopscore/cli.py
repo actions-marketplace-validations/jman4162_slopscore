@@ -17,7 +17,8 @@ from slopscore.ingest.code import CODE_SUFFIXES as _CODE_SUFFIXES
 from slopscore.ingest.website import WebExtraNotInstalled
 from slopscore.models import Report
 from slopscore.report import render_batch, render_console, to_json, to_markdown, to_sarif
-from slopscore.report.batch import build_batch_report, fail_threshold_rank, max_severity
+from slopscore.report.batch import build_batch_report
+from slopscore.report.gate import failure_reasons
 from slopscore.scoring.model import ModelNotTrained
 from slopscore.scoring.profiles import KNOWN_PROFILES
 
@@ -83,7 +84,10 @@ def scan(
         None, "--baseline", "-b", help="Compare against a personal baseline from `calibrate`."
     ),
     scorer: Scorer | None = typer.Option(
-        None, "--scorer", help="Scoring engine: rules (default) or ml (learned model)."
+        None,
+        "--scorer",
+        help="Scoring engine: rules (default) or ml (research-only learned model: ignores "
+        "--strictness and --profile, no breakdown, trained on a 128-row snapshot).",
     ),
     config: Path | None = typer.Option(
         None, "--config", help="Explicit config file (else auto-discovered)."
@@ -95,8 +99,27 @@ def scan(
     diff: str | None = typer.Option(
         None, "--diff", help="Scan only files changed vs a git ref (e.g. origin/main)."
     ),
-    fail_on: FailOn = typer.Option(
-        FailOn.none, "--fail-on", help="Exit non-zero if any finding reaches this severity."
+    fail_on: FailOn | None = typer.Option(
+        None,
+        "--fail-on",
+        help="Exit 1 if any finding reaches this severity (config `fail_on`; default none).",
+    ),
+    fail_on_score: float | None = typer.Option(
+        None,
+        "--fail-on-score",
+        min=0.0,
+        max=100.0,
+        help="Exit 1 if any non-abstained document scores at or above this (config "
+        "`score_threshold`).",
+    ),
+    include: list[str] | None = typer.Option(
+        None, "--include", help="Only scan files matching this glob (repeatable)."
+    ),
+    exclude: list[str] | None = typer.Option(
+        None,
+        "--exclude",
+        help="Skip files/directories matching this glob or name (repeatable; replaces the "
+        "default excludes such as node_modules, .venv, build).",
     ),
     baseline_file: Path | None = typer.Option(
         None, "--baseline-file", help="A findings baseline from `slopscore-lint baseline`."
@@ -105,6 +128,11 @@ def scan(
         False, "--fail-on-new", help="With --baseline-file: exit 1 only on findings not in it."
     ),
     suggest: bool = typer.Option(False, "--suggest", help="Include rewrite suggestions."),
+    broad: bool = typer.Option(
+        False,
+        "--broad",
+        help="Enable the broad rule tier on every pack that has one (higher FPR; off by default).",
+    ),
     by_paragraph: bool = typer.Option(
         False, "--by-paragraph", help="Also score each paragraph (surfaces a sloppy section)."
     ),
@@ -113,6 +141,12 @@ def scan(
     """Scan a file, directory, URL, or stdin for AI-slop writing patterns."""
     from slopscore.config_file import discover_config, load_config, resolve_settings
 
+    if fail_on_new and baseline_file is None:
+        # Without a baseline there is nothing to compare against; silently exiting 0 (the old
+        # behaviour) made a mistyped CI invocation a permanently green gate.
+        raise typer.BadParameter(
+            "--fail-on-new requires --baseline-file.", param_hint="--fail-on-new"
+        )
     file_cfg = load_config(config) if config else discover_config()[0]
     try:
         settings = resolve_settings(
@@ -121,6 +155,11 @@ def scan(
             strictness=strictness.value if strictness else None,
             scorer=scorer.value if scorer else None,
             suggest=suggest or None,
+            broad=broad or None,
+            fail_on=fail_on.value if fail_on else None,
+            score_threshold=fail_on_score,
+            include=include,
+            exclude=exclude,
         )
     except ValueError as exc:
         err_console.print(f"[red]Invalid configuration:[/red] {exc}")
@@ -142,7 +181,13 @@ def scan(
         err_console.print(f"[red]{exc}[/red]")
         raise typer.Exit(code=2) from exc
 
-    paths = _resolve_batch_paths(targets, recursive=recursive, diff=diff)
+    paths = _resolve_batch_paths(
+        targets,
+        recursive=recursive,
+        diff=diff,
+        include=settings.include,
+        exclude=settings.exclude,
+    )
     try:
         if paths is not None:
             reports = []
@@ -166,21 +211,26 @@ def scan(
         err_console.print(f"[red]{exc}[/red]")
         raise typer.Exit(code=3) from exc
 
+    known: set[str] | None = None
     if baseline_file is not None and fail_on_new:
         from pydantic import ValidationError
 
-        from slopscore.report.baseline import BaselineFile, new_findings
+        from slopscore.report.baseline import BaselineFile
 
         try:
             known = BaselineFile.model_validate_json(baseline_file.read_text("utf-8")).as_set()
         except (OSError, ValueError, ValidationError) as exc:
             err_console.print(f"[red]Could not read baseline file {baseline_file}:[/red] {exc}")
             raise typer.Exit(code=2) from exc
-        total_new = sum(new_findings(r, known) for r in reports)
-        if total_new:
-            err_console.print(f"[red]{total_new} new finding(s) not in the baseline.[/red]")
-            raise typer.Exit(code=1)
-    elif max_severity(reports) >= fail_threshold_rank(fail_on.value):
+    reasons = failure_reasons(
+        reports,
+        fail_on=settings.fail_on,
+        score_threshold=settings.score_threshold,
+        baseline=known,
+    )
+    if reasons:
+        for reason in reasons:
+            err_console.print(f"[red]{escape(reason)}[/red]")
         raise typer.Exit(code=1)
 
 
@@ -188,28 +238,58 @@ _SCANNABLE_SUFFIXES = {".txt", ".md", ".markdown", ".rst", ".json"} | _CODE_SUFF
 
 
 def _resolve_batch_paths(
-    targets: list[str], *, recursive: bool, diff: str | None
+    targets: list[str],
+    *,
+    recursive: bool,
+    diff: str | None,
+    include: tuple[str, ...] = (),
+    exclude: tuple[str, ...] = (),
 ) -> list[Path] | None:
     """Return a file list for batch mode, or None for single-target (file/url/stdin)."""
     if diff is not None:
+        import os
         import subprocess
 
-        out = subprocess.run(
-            ["git", "diff", "--name-only", diff],
-            capture_output=True,
-            text=True,
-            check=True,
-        ).stdout
+        try:
+            root = subprocess.run(
+                ["git", "rev-parse", "--show-toplevel"],
+                capture_output=True,
+                text=True,
+                check=True,
+            ).stdout.strip()
+            out = subprocess.run(
+                ["git", "diff", "--name-only", diff],
+                capture_output=True,
+                text=True,
+                check=True,
+            ).stdout
+        except (subprocess.CalledProcessError, FileNotFoundError) as exc:
+            # Exit 2 (usage), not 1: exit 1 means "findings reached --fail-on", and CI must be
+            # able to tell a bad ref from bad prose.
+            detail = (getattr(exc, "stderr", "") or str(exc)).strip()
+            err_console.print(f"[red]git diff against {diff!r} failed:[/red] {detail}")
+            raise typer.Exit(code=2) from exc
+        # git prints repo-root-relative paths; re-anchor them on the cwd so a scan from a
+        # subdirectory finds them, but keep them relative so baseline fingerprints are stable.
         return [
-            Path(line)
+            Path(os.path.relpath(Path(root, line)))
             for line in out.splitlines()
             if Path(line).suffix.lower() in _SCANNABLE_SUFFIXES
         ]
     if len(targets) > 1:
-        return [Path(t) for t in targets]
+        # A directory among several targets is walked like a lone directory target; it used to be
+        # opened as a file and crash with IsADirectoryError.
+        paths: list[Path] = []
+        for t in targets:
+            p = Path(t)
+            if p.is_dir():
+                paths.extend(iter_paths(t, recursive=recursive, include=include, exclude=exclude))
+            else:
+                paths.append(p)
+        return paths
     target = targets[0]
     if target != "-" and not looks_like_url(target) and Path(target).is_dir():
-        return list(iter_paths(target, recursive=recursive))
+        return list(iter_paths(target, recursive=recursive, include=include, exclude=exclude))
     return None
 
 
@@ -409,8 +489,16 @@ def eval_cmd(
     import json as _json
 
     from slopscore.eval.datasets import load_jsonl, load_seed
-    from slopscore.eval.harness import evaluate, should_promote
     from slopscore.scoring.model import model_available
+
+    try:
+        from slopscore.eval.harness import evaluate, should_promote
+    except ImportError as exc:  # scikit-learn lives in the [eval] extra
+        err_console.print(
+            "[yellow]The eval command needs the [eval] extra: "
+            'pip install "slopscore-lint[eval]"[/yellow]'
+        )
+        raise typer.Exit(code=3) from exc
 
     rows = load_jsonl(dataset) if dataset else load_seed()
     results = {"rules": evaluate(rows, profile=profile, scorer="rules")}
@@ -457,11 +545,25 @@ _DIMENSION_GUIDE: dict[str, str] = {
     "unsupported_claims": "Sweeping or universal claims with no citation or evidence.",
     "prompt_residue": "Leftover assistant boilerplate ('as an AI', 'here is a ...').",
     "significance_inflation": "Overclaimed impact (pivotal, transformative, groundbreaking).",
+    "insight_signaling": (
+        "Pseudo-profundity: phrases that announce insight rather than contain it "
+        "('load-bearing', 'doing the real work', 'the crux of the issue'). --broad adds "
+        "rationalist/essayist jargon (steelman, first principles) at higher FPR."
+    ),
+    "performative_candor": (
+        "Manufactured sincerity: a point framed as a difficult confession ('to be honest', "
+        "'truth be told', 'honest limits'). --broad adds bare sincerity adverbs (genuinely, "
+        "honestly) at higher FPR."
+    ),
     "superficial_analysis": "Trailing '-ing' clauses that gesture at analysis without substance.",
     "weasel_attribution": "Vague sourcing ('experts say', 'studies show') with no specifics.",
     "parallelism": "Rule-of-three and negative-parallelism padding. Weak alone.",
     "copula_avoidance": "Decline of plain 'is/are' in favor of fancier verbs. Weak alone.",
-    "formatting_tells": "Em dash and curly-quote tics, list-heavy formatting. Weak alone.",
+    "formatting_tells": "Em dash and curly-quote tics. Weak alone.",
+    "structure_tells": (
+        "Chatbot Markdown shape: emoji headings, '**Label:** text' bullet runs, heading-level "
+        "jumps, rules between every section, heavy bold. Weak alone; softened for technical."
+    ),
     "human_writing_signals": "Specific, plain, concrete writing. NEGATIVE: this LOWERS the score.",
 }
 
@@ -486,6 +588,9 @@ def fairness_cmd(
     threshold: float = typer.Option(
         0.2, "--threshold", help="Flag rules whose false-positive rate on a slice exceeds this."
     ),
+    broad: bool = typer.Option(
+        False, "--broad", help="Audit the opt-in broad tier too (it is what --broad scans with)."
+    ),
 ) -> None:
     """Audit per-rule false positives on plain and non-native English.
 
@@ -504,8 +609,10 @@ def fairness_cmd(
             "(text,label,subgroup), or run from a source checkout."
         )
         raise typer.Exit(code=2)
+    from slopscore.config import Settings
+
     rows = load_jsonl(path)
-    engine = SlopScorer(profile="blog")
+    engine = SlopScorer(settings=Settings(profile="blog", broad_rules=broad))
     slices = ["simple_english", "non_native"]
 
     for slice_name in slices:
@@ -516,7 +623,7 @@ def fairness_cmd(
         flagged_docs = 0
         for r in clean:
             report = engine.scan_text(r.text)
-            fired = {e.rule_id for e in report.evidence if not e.rule_id.startswith("SUGGEST_")}
+            fired = {e.rule_id for e in report.findings}  # rule hits only, no summaries
             fires.update(fired)
             if report.score.slop_score >= 50:
                 flagged_docs += 1

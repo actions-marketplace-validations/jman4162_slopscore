@@ -4,9 +4,9 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
-from slopscore.models import STANDARD_WARNINGS, Evidence, Severity, SourceType
+from slopscore.models import STANDARD_WARNINGS, Evidence, EvidenceKind, Severity, SourceType
 from slopscore.normalize.offsets import OffsetMapper
-from slopscore.spans import TextSpan
+from slopscore.spans import BlockMeta, TextSpan
 
 
 @dataclass
@@ -26,6 +26,20 @@ class Document:
     source: str = "<string>"
     language: str = "en"
     language_confidence: float = 1.0
+    # Markdown block structure (offsets in ORIGINAL coordinates); empty for unstructured text.
+    blocks: list[BlockMeta] = field(default_factory=list)
+    # Ranges of cleaned text inside double quotes (someone else's words).
+    quoted: list[tuple[int, int]] = field(default_factory=list)
+
+    def in_block_kind(self, clean_start: int, kinds: frozenset[str]) -> bool:
+        """True when the cleaned offset falls inside a block of one of ``kinds``."""
+        if not self.blocks:
+            return False
+        orig, _ = self.mapper.to_original(clean_start, clean_start)
+        for b in self.blocks:
+            if b.start <= orig < b.end:
+                return b.kind in kinds
+        return False
 
     @property
     def word_count(self) -> int:
@@ -38,6 +52,7 @@ class Document:
         clean_start: int,
         clean_end: int,
         explanation: str,
+        kind: EvidenceKind = EvidenceKind.finding,
     ) -> Evidence:
         """Build an :class:`Evidence` from a span in cleaned coordinates.
 
@@ -52,7 +67,8 @@ class Document:
             start_char=orig_start,
             end_char=orig_end,
             explanation=explanation,
+            kind=kind,
         )
 
 
-__all__ = ["STANDARD_WARNINGS", "Document", "TextSpan"]
+__all__ = ["STANDARD_WARNINGS", "BlockMeta", "Document", "TextSpan"]

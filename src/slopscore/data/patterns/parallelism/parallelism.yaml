@@ -10,13 +10,13 @@ rules:
 
   - rule_id: PARALLEL_ITS_NOT_ITS
     severity: medium
-    pattern: "\\bit(?:'s| is| was)\\s+not\\s+(?:just\\s+)?[^.?!,;]{1,60}[,;—-]+\\s*it(?:'s| is| was)\\b"
+    pattern: "\\b(?:it(?:'s| is| was)\\s+not|it isn't|it wasn't|this isn't|that isn't)\\s+(?:just\\s+)?[^.?!,;]{1,60}[,;—-]+\\s*(?:it|this|that)(?:'s| is| was)\\b"
     explanation: "'It's not X, it's Y' negative parallelism."
     source: "WP:AIPARALLEL"
 
   - rule_id: PARALLEL_NOT_JUST
     severity: medium
-    pattern: "\\b(?:is|are|was|were)\\s+not\\s+just\\b[^.?!]{1,60}?[,;—-]\\s*(?:it(?:'s| is)|they(?:'re| are))\\b"
+    pattern: "\\b(?:is|are|was|were|isn't|aren't|wasn't|weren't)\\s+(?:not\\s+)?(?:just|only|merely|simply)\\b[^.?!]{1,60}?[,;—-]\\s*(?:it(?:'s| is)|they(?:'re| are)|that(?:'s| is))\\b"
     explanation: "'X is not just Y, it's Z' inflation parallelism."
     source: "WP:AIPARALLEL"
 
@@ -40,6 +40,42 @@ rules:
 
   - rule_id: PARALLEL_X_NOT_Y
     severity: low
-    pattern: "(?:^|(?<=[.!?:]\\s)|(?<=\\*\\*))[A-Z][^.?!,;:]{1,30},\\s+not\\s+[^.?!,;:]{1,30}[.!?]"
+    # (?-i:[A-Z]) keeps the sentence-initial capital case-sensitive: rules compile under
+    # IGNORECASE, so a bare [A-Z] matched any letter and this fired mid-sentence.
+    pattern: "(?:^|(?<=[.!?:]\\s)|(?<=\\*\\*))(?-i:[A-Z])[^.?!,;:]{1,30},\\s+not\\s+[^.?!,;:]{1,30}[.!?]"
     explanation: "'X, not Y' elliptical antithesis slogan (punchy contrast takeaway)."
+    source: "WP:AIPARALLEL"
+
+  # v0.7 antithesis variants — antithesis is the single most recognizable AI tell.
+  - rule_id: PARALLEL_NOT_MERELY_BUT
+    severity: medium
+    pattern: "\\bnot merely\\b[^.?!]{1,60}?\\bbut\\b"
+    explanation: "'not merely X, but Y' antithesis (a 'not just' variant)."
+    source: "WP:AIPARALLEL"
+
+  - rule_id: PARALLEL_LESS_ABOUT_MORE_ABOUT
+    severity: medium
+    pattern: "\\bless about\\b[^.?!]{1,60}?\\b(?:and )?more about\\b"
+    explanation: "'this is less about X and more about Y' contrast frame."
+    source: "WP:AIPARALLEL"
+
+  # Non-'it' subject so this does not double-fire with PARALLEL_ITS_NOT_ITS (which already
+  # accepts an em dash separator when the subject is 'it').
+  - rule_id: PARALLEL_NOT_EMDASH_ITS
+    severity: medium
+    pattern: "(?<!it )(?:is|are|was|were)\\s+not\\s+[^.?!,;]{1,50}[—–]\\s?it(?:'s| is)\\b"
+    explanation: "'X is not Y—it's Z' em-dash antithesis."
+    source: "WP:AIPARALLEL"
+
+  # v0.13: the antithesis split across a sentence boundary evaded every rule above.
+  - rule_id: PARALLEL_NOT_ABOUT_ITS_ABOUT
+    severity: medium
+    pattern: "\\b(?:it|this|that)(?:'s| is|'s not| is not| isn't)\\s*(?:not\\s+)?(?:about|just about|only about)\\b[^.?!]{1,60}[.!?]\\s+(?:it|this|that)(?:'s| is) about\\b"
+    explanation: "'It's not about X. It's about Y.' antithesis across a sentence break."
+    source: "WP:AIPARALLEL"
+
+  - rule_id: PARALLEL_BOTH_AND
+    severity: low
+    pattern: "\\b(?:it'?s not (?:either\\b|a (?:binary|dichotomy|false (?:choice|dichotomy)))|the answer is (?:not either[,;—-]* )?both)\\b"
+    explanation: "'it's not either/or — it's both' false-binary reframe."
     source: "WP:AIPARALLEL"

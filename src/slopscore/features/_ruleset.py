@@ -10,7 +10,16 @@ import yaml
 
 from slopscore.config import data_path
 from slopscore.document import Document
+from slopscore.features.base import SEVERITY_WEIGHT
 from slopscore.models import Evidence, Severity
+
+__all__ = [
+    "SEVERITY_WEIGHT",
+    "Rule",
+    "find_matches",
+    "load_rules",
+    "load_rules_from_directory",
+]
 
 
 @dataclass(frozen=True)
@@ -58,10 +67,16 @@ def load_rules_from_directory(*parts: str) -> list[Rule]:
     return rules
 
 
-def find_matches(doc: Document, rules: list[Rule]) -> list[Evidence]:
+def find_matches(doc: Document, rules: list[Rule], *, skip_quoted: bool = False) -> list[Evidence]:
+    """Run every rule over the cleaned text. With ``skip_quoted``, matches that fall wholly inside
+    a quotation are dropped: they are someone else's words, not the author's."""
+    from slopscore.normalize.quotes import inside_quotes
+
     spans: list[Evidence] = []
     for rule in rules:
         for m in rule.pattern.finditer(doc.cleaned_text):
+            if skip_quoted and inside_quotes(doc.quoted, m.start(), m.end()):
+                continue
             spans.append(
                 doc.evidence(
                     rule_id=rule.rule_id,
@@ -72,11 +87,3 @@ def find_matches(doc: Document, rules: list[Rule]) -> list[Evidence]:
                 )
             )
     return spans
-
-
-# Severity weights used when turning a set of hits into a [0, 1] score.
-SEVERITY_WEIGHT: dict[Severity, float] = {
-    Severity.low: 1.0,
-    Severity.medium: 2.0,
-    Severity.high: 4.0,
-}

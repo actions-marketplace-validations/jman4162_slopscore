@@ -10,8 +10,15 @@ labeling rubric is in
 
 | Set | n | AUROC | PR-AUC | TPR@1%FPR | ECE |
 |---|---|---|---|---|---|
-| benchmark (overt slop, in-sample) | 128 | 0.89 | 0.91 | 0.65 | 0.18 |
-| Wikipedia AI-Cleanup (held-out, real wild slop) | 40 | 0.69 | 0.65 | 0.00 | 0.39 |
+| benchmark (overt slop, in-sample, 13-40 words) | 141 | 0.87 | 0.89 | 0.56 | 0.27 |
+| long-form (committed, 300+ words) | 180 | 0.71 | 0.59 | 0.13 | 0.25 |
+| Wikipedia AI-Cleanup, full articles (held-out) | 180 | 0.75 | 0.77 | 0.11 | 0.42 |
+
+Every benchmark row is 13 to 40 words, under the 100-word abstention floor, so its numbers
+describe short-fragment discrimination only. The long-form set (v0.12) is the first evaluation on
+documents the tool is meant for: 120 pre-LLM or unflagged human documents against 60 full
+Wikipedia articles flagged as suspected AI-generated. Recommended thresholds derived from 522
+human-good long-form documents are on the [Thresholds](thresholds.md) page.
 
 slopscore separates overt formulaic slop from clean prose well. On real Wikipedia cases it is only
 moderately better than chance and catches almost none at a strict 1%-false-positive operating
@@ -23,9 +30,9 @@ Per-subgroup false-positive rate on the benchmark:
 
 | Subgroup | n | rules FPR | ml FPR |
 |---|---|---|---|
-| general | 100 | 0.00 | 0.06 |
-| simple_english | 14 | 0.00 | 0.71 |
-| non_native | 14 | 0.00 | 0.33 |
+| general | 107 | 0.00 | 0.05 |
+| simple_english | 17 | 0.00 | 0.59 |
+| non_native | 17 | 0.00 | 0.27 |
 
 The learned model (`--scorer ml`) edges the rule scorer on raw metrics but over-flags plain and
 non-native English. The replace-if-wins gate keeps the transparent rule scorer as the default; the
