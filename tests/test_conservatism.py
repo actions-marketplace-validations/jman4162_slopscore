@@ -83,3 +83,29 @@ def test_non_english_label_withheld() -> None:
     if report.input.language != "en":  # depends on optional [lang] extra
         assert report.score.abstained is True
         assert report.score.label != Label.severe
+
+
+def test_the_density_floor_is_opt_in() -> None:
+    # Applied globally the floor raised scores on short text carrying human signal (a saturated
+    # slop dimension cannot fall further while the negative human counterweight is shrunk) and
+    # inverted --by-paragraph ranking, which tracks density. It is opt-in per call site;
+    # metadiscourse is the only dimension that takes it.
+    from slopscore.features.base import MIN_RATE_WORDS, per_hundred_words
+
+    assert per_hundred_words(3.0, 10) == 30.0
+    assert per_hundred_words(3.0, 10, MIN_RATE_WORDS) == 3.0
+    assert per_hundred_words(3.0, 500, MIN_RATE_WORDS) == 0.6
+
+
+def test_by_paragraph_ranking_tracks_density_not_length() -> None:
+    # --by-paragraph exists to rank paragraphs; a short dense one must outrank a long mild one.
+    short_dense = (
+        "It's worth noting that the committee met in Leeds on 14 March 2021 to review tenders."
+    )
+    long_mild = (
+        "It's worth noting that the committee met in Leeds on 14 March 2021 to review tenders. "
+        "Costs rose 12 percent since the previous quarter, largely because of steel prices. "
+        "Members asked the contractor for a revised schedule before the next session begins. "
+        "The minutes record four abstentions and no dissent at all on the final vote taken. "
+    )
+    assert scan_text(short_dense).score.slop_score > scan_text(long_mild).score.slop_score

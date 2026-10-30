@@ -37,23 +37,40 @@ _PROPER = re.compile(r"(?<=[a-z,;:]\s)\p{Lu}\p{Ll}+")
 # `backticked`): concrete references that technical and README prose is built from.
 _ACRONYM = re.compile(r"\b\p{Lu}[\p{Lu}\d]{1,}\b")
 _IDENTIFIER = re.compile(r"`[^`\n]+`|\b\w+_\w+\b|\b[a-z]+[A-Z]\w+\b|\b\w+\.\w+\(\)")
+# Spelled-out cardinals. Off by default: genericity is calibrated against the digit-only count,
+# and widening it there would shift every document's score. metadiscourse opts in, because it
+# asks a narrower question — does this sentence carry a fact at all? — and "roughly three in
+# five households returned the form" plainly does. "one" and "half" are excluded: they are far
+# more often pronouns and idioms ("one of the", "half the time") than quantities.
+_SPELLED_NUMBER = re.compile(
+    r"\b(?:two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|twenty|thirty|forty"
+    r"|fifty|sixty|seventy|eighty|ninety|hundred|thousand|million|billion|trillion|dozen)\b",
+    re.IGNORECASE,
+)
 
 # Evidence items per sentence at or above which the text is "specific enough" (genericity ~0).
 _TARGET_PER_SENTENCE = 0.75
 
 
-def _regex_evidence(text: str) -> int:
+def concrete_evidence_count(text: str, *, spelled_numbers: bool = False) -> int:
+    """Count the concrete references in a span: numbers, URLs, proper nouns, acronyms, ids.
+
+    Shared with ``features/metadiscourse.py``, which uses it as a predicate (is this sentence
+    carrying any fact at all?) rather than as a score. Kept here because this is where the
+    regexes and the "no name, number, date, URL, or identifier" wording already live.
+    """
     return (
         len(_NUMBER.findall(text))
         + len(_URL.findall(text))
         + len(_PROPER.findall(text))
         + len(_ACRONYM.findall(text))
         + len(_IDENTIFIER.findall(text))
+        + (len(_SPELLED_NUMBER.findall(text)) if spelled_numbers else 0)
     )
 
 
 def _per_sentence_regex(sentences: list[TextSpan]) -> list[int]:
-    return [_regex_evidence(s.text) for s in sentences]
+    return [concrete_evidence_count(s.text) for s in sentences]
 
 
 def _per_sentence_nlp(text: str, sentences: list[TextSpan]) -> list[int]:
@@ -77,7 +94,7 @@ class Specificity:
     def extract(self, doc: Document, profile: str) -> FeatureResult:
         sentences = [s for s in doc.sentences if s.text.strip()]
         if not sentences:
-            items = float(_regex_evidence(doc.cleaned_text))
+            items = float(concrete_evidence_count(doc.cleaned_text))
             genericity = 1.0 - saturating(items, _TARGET_PER_SENTENCE)
             return FeatureResult(dimension=self.dimension, score=genericity, spans=[])
         per_sentence = (

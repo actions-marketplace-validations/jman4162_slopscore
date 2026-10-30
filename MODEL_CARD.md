@@ -56,6 +56,10 @@ Vocabulary drifts by model era (GPT-4 → GPT-4o → GPT-5); the lexicon tags te
   high score on plain or non-native English as evidence of anything about the author.
 - **Short text.** Under ~300 words confidence is low; under ~100 the score abstains.
 - **Genre.** Marketing and travel writing naturally resemble slop; use `--profile` to reweight.
+- **Argued explainer prose.** Specific, fact-dense prose with model-style antithesis ("it's a
+  cost, not a collapse") and staging ("the stronger version of this argument") scores low by
+  design. The rules report the spans; the corroboration gate keeps the label down, because the
+  same register is ordinary human op-ed writing and no benchmark slice yet measures it.
 - **Adversarial edits.** Light paraphrasing evades pattern matching, as it does all detectors.
 - **Coverage.** Wikipedia/markup-specific and authorship-signal tells are intentionally excluded;
   slopscore is a general-prose tool.
@@ -118,7 +122,7 @@ human-signal counterweight. Current numbers (`eval/RESULTS.md`):
 
 | set | n | AUROC | PR-AUC | TPR@1%FPR |
 |---|---:|---:|---:|---:|
-| benchmark (13-40 words, in-sample) | 141 | 0.87 | 0.89 | 0.57 |
+| benchmark (13-40 words, in-sample) | 149 | 0.86 | 0.86 | 0.33 |
 | long-form (300+ words, committed, eval-only) | 180 | 0.71 | 0.59 | 0.13 |
 | Wikipedia AI-Cleanup, full articles (held-out) | 180 | 0.75 | 0.77 | 0.11 |
 
@@ -133,7 +137,7 @@ change.
 v0.5 adds a real slop-labeled benchmark and retrains the learned scorer on it. Full numbers and
 reproduction are in `eval/RESULTS.md` (`python scripts/eval/report.py`). Two evaluation sets:
 
-- `eval/datasets/benchmark.jsonl` (141 rows): hand-authored, taxonomy-graded (Shaib et al.,
+- `eval/datasets/benchmark.jsonl` (149 rows): hand-authored, taxonomy-graded (Shaib et al.,
   "Measuring AI Slop", arXiv:2509.19163) slop vs clean text, with `simple_english` and `non_native`
   fairness slices. In-sample (overlaps the training seed); measures discrimination on overt slop.
 - Wikipedia AI-Cleanup (40 rows): articles editors flagged as suspected AI-generated vs random
@@ -154,12 +158,13 @@ Per-subgroup false-positive rate on the benchmark, which keeps the rule scorer t
 
 | subgroup | n | rules FPR | ml FPR |
 |---|---|---|---|
-| general | 107 | 0.00 | 0.05 |
-| simple_english | 17 | 0.00 | 0.59 |
-| non_native | 17 | 0.00 | 0.27 |
+| general | 111 | 0.00 | 0.07 |
+| simple_english | 19 | 0.05 | 0.63 |
+| non_native | 19 | 0.00 | 0.24 |
 
 (Current numbers; the v0.5 release reported 100 / 14 / 14 rows and 0.71 / 0.33. A 0.00 rate on
-17 rows has a 95% upper bound near 0.20.)
+19 rows has a 95% upper bound near 0.18. v0.14 added eight rows, one of which exposed a
+pre-existing `FORMULAIC_SIMPLY_PUT` false positive that puts `simple_english` at 0.05.)
 
 The learned model, retrained on the benchmark (`slopscore-v0.5.json`), edges the rule scorer on raw
 metrics but over-flags simple and non-native English. The replace-if-wins gate therefore keeps the
@@ -209,6 +214,110 @@ an opt-in self-editing highlighter, not an accusation. The broad tier also exclu
 `human_signals.py` credits as a positive human signal (perhaps/maybe/arguably/likely), since hedging
 is correct epistemics in calibrated writing; only the *hedge + vague adjective* construction is
 treated as a tell.
+
+v0.14 adds a **metadiscourse** dimension for writing that refers to the text rather than to its
+subject. This is Hyland's (2005) *interactive* metadiscourse (frame markers, endophoric markers,
+code glosses), and the interactional half of his taxonomy was already covered here: hedges by
+`weasel_attribution`, boosters by `significance_inflation`, attitude markers by
+`performative_candor`. Rules-only, excluded from the ML `FEATURE_ORDER`.
+
+It is a separate dimension rather than more `formulaic_structure` rules for the same reason
+`performative_candor` is separate from `insight_signaling`: the genre multipliers must invert
+harder than `formulaic_structure`'s 0.9-1.2 range can express. Academic and technical prose
+signposts by design ("In this section we describe...", "As noted above"), so both are set to 0.5
+against 1.15 for `blog`. `formulaic_structure` also carries unrelated template rules that should
+not move with them. No rules were migrated out of `formulaic.yaml`: that would break rule-id
+suppressions and `report/baseline.py` fingerprints in the wild, and the run detector reads a
+separate non-scoring marker lexicon that is a superset of both, so it sees the whole surface
+without needing them moved. Where the two would overlap the new rule is narrowed instead:
+`META_RESTATEMENT_COLON` takes only the colon form `FORMULAIC_SIMPLY_PUT`'s comma gate misses.
+
+**Why it scores concentration and not only density.** Every other rule pack scores
+severity-weighted hits per 100 words. That normalizer cannot see this defect in long-form prose,
+which is where it occurs. Measured: the passage that prompted the dimension saturates
+`formulaic_structure` at 1.0 at 123 words and scores 0.064 at 3,373 words, taking the document to
+9.6/low. That is the same effect this card already reports on the Wikipedia slice, where recall
+is 1% because "their tells are sparse and per-100-word rates dilute them". So the dimension scores
+`max(rate, concentration)`, where the concentration term is independent of document length.
+
+**The evidence gate is the fairness gate.** A marker only counts toward a run when its sentence
+carries no name, number, date, URL, or identifier. "In summary, Japan took 34 years to recover
+from 1989" is a real summary sentence; "Precision matters here because the counter-argument will
+not survive sloppy phrasing" is not. Restatement scaffolding over a concrete fact is a documented
+ESL and simple-English clarity strategy, and this is what keeps the dimension off it. The same
+predicate drops individual code-gloss and back-reference spans whose sentence carries a fact; the
+prose-grading and frame-marker rules are deliberately not gated, since "the defensible version is"
+announces the writing whatever facts sit beside it.
+
+**Neither weak nor corroborating.** `metadiscourse` is deliberately not a `WEAK_DIMENSION`: weak
+means damped to 0.3 when alone, which is the exact failure the dimension exists to fix: a
+2,592-word post whose other dimensions were clean scored 7.0 with the flagged passage unflagged.
+It is equally deliberately not a corroborator. `CORROBORATING_DIMENSIONS` is derived by
+subtraction, so it picked the dimension up for free, and the length-invariant concentration term
+clears the gate's ramp on its own: three metadiscourse sentences took an otherwise identical
+600-word document from 46.4 "mild" to 97.6 "severe" by counting every weak dimension at full
+weight. `weights.py:NON_CORROBORATING_DIMENSIONS` subtracts it again, so it carries full weight
+for itself and casts no vote on anything else. The remaining containments are the high-precision
+core tier, with every ESL-risky bare code gloss held in `--broad`, and a `full_scale` of 4.0
+rather than 3.0.
+
+**Fairness.** Bare code glosses ("that is to say", "meaning that", clause-initial "Overall,") are
+`--broad`-only, matching the decision made for bare quantifiers and bare sincerity adverbs above.
+WP:AISIGNS is explicit that transition words in isolation "[have] precedence in essay-like writing
+by humans and [are] accepted by many style guides, so this is not a strong tell". `benchmark.jsonl`
+carries eight `label 0` rows exercising this dimension across `general`, `simple_english`, and
+`non_native`; no positive rows were added, because rows written to contain the constructions the
+rules were written to match would raise TPR without measuring anything. No `META_` rule fires on
+either protected slice.
+
+**Vintage caveat.** WP:AISIGNS files its section-summary and didactic-disclaimer signs under
+*Historical indicators*, "much less frequent in newer models". That is true of the forms it lists,
+and slopscore's pre-0.14 coverage matched that vintage exactly: of 16 probe constructions, the
+four that matched a rule were all legacy closers ("in summary", "in other words", "the bottom line
+is", "it's worth noting") and all twelve misses were forms current models produce. The behaviour
+did not disappear; the form changed. Treat the legacy closers as the weak half of this dimension
+and the prose-grading and frame-marker rules as the current half.
+
+**What it actually fires on.** Measured across 258 real documents at release:
+
+| corpus | n | any `META_` rule | runs detected |
+|---|---:|---:|---:|
+| human long-form (FineWeb-Edu, Wikipedia 2023) | 120 | 1 (1%) | **0** |
+| long-form flagged as AI-generated | 60 | 0 (0%) | **0** |
+| assistant-written plans, 300+ words | 78 | 2 (3%), both `META_PROSE_CORRECTION` | **0** |
+
+Two things follow, and both belong on the record. The rules are precise: three hits in 258
+documents, and the two in assistant-written plans are the same virtuous-corrector construction a
+human reader reported, which is the case the dimension was built for. But **the concentration
+term has never fired outside that originating passage and the fixtures written for it.** It is
+the mechanism this dimension is organised around, and its real-world behaviour is unmeasured
+rather than validated. Zero fires also means zero measured false positives, which is why it ships
+on by default, but do not read the design rationale above as evidence that it works at scale.
+
+We cannot tell from the data in this repository whether runs of evidence-free metadiscourse are
+genuinely rare in these corpora or whether the run detector is too narrow to catch them. The
+corpora available are pre-2022 web text, Wikipedia, and a small set of assistant plans; none is a
+corpus of current-model long-form prose, which the v0.13 notes already named as the prerequisite
+for this kind of work.
+
+**Known limitations.** The residual `simple_english` FPR of 0.05 is `FORMULAIC_SIMPLY_PUT`, a
+pre-existing rule, scoring "In other words, you need two coins before you get on" at 66.0. One
+low-severity hit saturates a 16-word document because `per_hundred_words` amplifies it 6.25x.
+Flooring that denominator globally was tried for this release and reverted: it raised scores on
+short text carrying human signal, because a saturated slop dimension cannot fall further while
+the negative `human_writing_signals` counterweight is shrunk, and it inverted `--by-paragraph`
+ranking, which tracks density rather than hit count. The floor is opt-in and `metadiscourse` is
+the only dimension that takes it. The false positive is a measurement these rows expose rather
+than one this dimension introduced, and fixing it properly needs its own calibration pass.
+
+A terminal-recap term for formulaic conclusions was also built and dropped: it changed nothing on
+any eval set, and similarity over shared vocabulary could not separate a restatement from a closer
+that merely shares the body's subject (generic new advice 0.385 against a close paraphrase 0.333).
+
+Separately, a metadiscourse marker and a `formulaic_structure` template can both fire on one
+sentence ("In summary," is a template *and* a frame marker). These are two measurements of one
+sentence rather than one charged twice, and the run detector limits the compounding by emitting a
+single span anchored on the run's first sentence rather than one per sentence.
 
 v0.9 adds a **performative_candor** dimension for manufactured sincerity: a point framed as a
 difficult confession ("I have to be honest", "truth be told", "let me be candid"), a sincerity

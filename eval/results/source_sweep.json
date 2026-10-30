@@ -1,0 +1,71 @@
+{
+  "by_paragraph_ranks_by_density": true,
+  "code_ingester": {
+    "code_vs_text_divergence": {
+      "CANDOR_DISCLOSURE_MARKER": 1,
+      "CANDOR_HONEST_ABSTRACT_NOUN": 1,
+      "CANDOR_TO_BE_HONEST": 1,
+      "FORMATTING_EM_DASH": 1,
+      "FORMULAIC_OPENING_FASTPACED": 1,
+      "INSIGHT_CRUX": 1,
+      "INSIGHT_REAL_WORK": 1,
+      "LEXICAL_ABSTRACT_NOUNS": 1,
+      "LEXICAL_GENERIC_IMPORTANCE": 13,
+      "LEXICAL_MARKETING_UPLIFT": 1,
+      "LEXICAL_OVERPOLISHED_VERBS": 2,
+      "LEXICAL_SYNTHETIC_SOPHISTICATION": 1,
+      "META_CLARIFY_FRAME": 1,
+      "META_SECTION_PLAN": 1,
+      "PARALLEL_X_NOT_Y": 3,
+      "RESIDUE_AS_AN_AI": 1
+    },
+    "n_files": 66
+  },
+  "divergent_examples": {},
+  "divergent_rules": {},
+  "high_severity_runs_on_clean_rows": [],
+  "meta_findings_added_by_wrapping": [],
+  "meta_hits": {
+    "META_ENDOPHORIC_BACKREF": 1
+  },
+  "meta_runs_flat": 0,
+  "meta_runs_wrapped": 0,
+  "n_compared_across_ingesters": 155,
+  "n_documents": 193,
+  "wrap_divergent_examples": {
+    "CLAIM_AUTHORITY_NO_CITATION": "longform:104",
+    "COPULA_FEATURES_OFFERS": "longform:134",
+    "COPULA_REPRESENTS": "longform:90",
+    "COPULA_SERVES_AS": "longform:113",
+    "FORMULAIC_NOT_ONLY_BUT_ALSO": "longform:161",
+    "FORMULAIC_RHETORICAL_WHAT_MEAN": "longform:36",
+    "FORMULAIC_WORTH_NOTING": "longform:178",
+    "META_ENDOPHORIC_BACKREF": "longform:11",
+    "PARALLEL_NOT_ONLY_BUT_ALSO": "longform:161",
+    "PARALLEL_RATHER_THAN_PRIORITIZE": "longform:79",
+    "SIGNIF_PIVOTAL_ROLE": "longform:147",
+    "SIGNIF_STANDS_AS_TESTAMENT": "longform:141",
+    "WEASEL_EXPERTS_ARGUE": "longform:129",
+    "WEASEL_INDUSTRY_REPORTS": "longform:165",
+    "WEASEL_IT_IS_BELIEVED": "longform:92",
+    "WEASEL_STUDIES_SHOW": "longform:8"
+  },
+  "wrap_divergent_rules": {
+    "CLAIM_AUTHORITY_NO_CITATION": 1,
+    "COPULA_FEATURES_OFFERS": 1,
+    "COPULA_REPRESENTS": 4,
+    "COPULA_SERVES_AS": 5,
+    "FORMULAIC_NOT_ONLY_BUT_ALSO": 2,
+    "FORMULAIC_RHETORICAL_WHAT_MEAN": 1,
+    "FORMULAIC_WORTH_NOTING": 1,
+    "META_ENDOPHORIC_BACKREF": 1,
+    "PARALLEL_NOT_ONLY_BUT_ALSO": 2,
+    "PARALLEL_RATHER_THAN_PRIORITIZE": 1,
+    "SIGNIF_PIVOTAL_ROLE": 3,
+    "SIGNIF_STANDS_AS_TESTAMENT": 1,
+    "WEASEL_EXPERTS_ARGUE": 1,
+    "WEASEL_INDUSTRY_REPORTS": 1,
+    "WEASEL_IT_IS_BELIEVED": 1,
+    "WEASEL_STUDIES_SHOW": 2
+  }
+}

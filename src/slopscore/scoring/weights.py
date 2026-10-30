@@ -42,6 +42,13 @@ DEFAULT_WEIGHTS: dict[Dimension, float] = {
     # spoken English in a way that "studies show" is not. Weak-alone, so a chatty-but-concrete
     # human post is damped rather than convicted on candor alone.
     Dimension.performative_candor: 1.8,
+    # Metadiscourse (v0.14): prose about the prose. In NEITHER WEAK_DIMENSIONS nor
+    # CORROBORATING_DIMENSIONS. Not weak, because weak means damped x0.3 when alone, which is the
+    # exact failure this dimension exists to fix (a 2,592-word post whose other dimensions were
+    # clean scored 7.0 with the flagged passage unflagged). Not corroborating either: see
+    # NON_CORROBORATING_DIMENSIONS below. The core rule tier is high-precision only and the broad
+    # tier holds every ESL-risky code gloss for their own sake, not to make it safe to corroborate.
+    Dimension.metadiscourse: 2.0,
     # negative counterweight
     Dimension.human_writing_signals: -2.2,
 }
@@ -70,9 +77,21 @@ STATISTICAL_DIMENSIONS: frozenset[Dimension] = frozenset(
     }
 )
 
+# Span-backed dimensions that still must not unlock the weak ones. metadiscourse (v0.14) scores
+# a length-invariant concentration term: a run of three sentences reads 0.55 whatever the
+# document length, which clears the gate's RAMP_HI on its own. Left in the derived set, three
+# sentences of prose-about-the-prose took an otherwise identical 600-word document from 46.4
+# "mild" to 97.6 "severe" by counting every weak dimension at full weight document-wide. It is
+# not weak either — that damping is the failure it exists to fix — so it sits in neither set:
+# full weight for itself, no vote on anyone else.
+NON_CORROBORATING_DIMENSIONS: frozenset[Dimension] = frozenset({Dimension.metadiscourse})
+
 # The dimensions whose elevation unlocks full weight for the weak ones: strong AND span-backed.
 CORROBORATING_DIMENSIONS: frozenset[Dimension] = (
-    frozenset(DEFAULT_WEIGHTS) - WEAK_DIMENSIONS - STATISTICAL_DIMENSIONS
+    frozenset(DEFAULT_WEIGHTS)
+    - WEAK_DIMENSIONS
+    - STATISTICAL_DIMENSIONS
+    - NON_CORROBORATING_DIMENSIONS
 )
 
 # How much a weak dimension's contribution is kept when nothing strong corroborates it.

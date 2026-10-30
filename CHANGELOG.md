@@ -3,6 +3,179 @@
 All notable changes to slopscore. The PyPI distribution is `slopscore-lint`; the import package
 and the tool are named `slopscore`.
 
+## 0.14.3
+
+The "earns its place" metaphor. Schema unchanged (0.14.0); two rule additions, no weight or
+gate changes.
+
+- **`INSIGHT_EARNS_ITS_PLACE`** (medium, core): "An intervention earns its place by beating a
+  feasible alternative", "Make active bets earn their place", "BOXX earns a place in a cash-heavy
+  portfolio". The metaphor says a standard was applied without stating it. A reader flagged three
+  uses in one essay, which scored no span findings. Sports selection, admissions, and legacy
+  prose use the phrase literally, so the rule fires only under a modal with "its", a causative
+  with a non-person object, the habitual present followed by by/through/when/only/if/because, or
+  a place in a portfolio, toolkit, workflow, stack, pipeline, codebase, routine, or allocation.
+  Past-tense "earned" fires only in that last arm. Known limit: "players earn their place by
+  training hard" fires, because the rule cannot see the subject. Zero hits on the fairness
+  slices; eval output unchanged.
+- **`INSIGHT_BROAD_EARN_PLACE`** (low, `--broad`): the bare phrase, including "earned a place"
+  and "earns its keep". It skips spans the core rule charges.
+
+## 0.14.2
+
+Argued op-ed rhetoric. Schema unchanged (0.14.0); five rule changes, no weight or gate changes.
+
+A reader flagged a 405-word explainer post on agentic bank runs as model-written from its
+rhetoric. v0.14.1 scored it 8.1 "low" with no span findings: every phrase they named missed a
+rule on a technicality.
+
+- **`INSIGHT_STRONGEST_VERSION`** (medium, core): "the stronger/strongest/best version of this
+  argument", "the strongest version of it", and "the objection deserves a fair hearing". The
+  phrase announces charity to the other side instead of stating their argument. Gated to an
+  argument noun or a bare this/that/it, so "the stronger version of the drug" stays quiet. The
+  bare phrase is `INSIGHT_BROAD_STRONGEST_VERSION` under `--broad`, which skips the objects the
+  core rule already charges.
+- **`PARALLEL_X_NOT_Y_CODA`** (low): "..., but it's a cost, not a collapse." `PARALLEL_X_NOT_Y`
+  only matched a sentence-initial slogan. Both sides need an article, and a sentence-initial
+  slogan is left to the old rule so one span is never charged twice.
+- **`PARALLEL_THATS_X_ITS_NOT_Y`** (low): "That's a legitimate risk for specific banks. It is not
+  a system-wide run." The first sentence must open on that/this.
+- **`META_ARGUMENT_SETUP`** (low): "The argument goes like this." Also added to the run
+  detector's marker list.
+- **`FORMULAIC_WORTH_NOTING`** now matches "worth remembering", "worth keeping in mind", and
+  "worth bearing in mind". Same rule id.
+- **Measured.** Before tightening, the two parallelism rules matched 5 MAGE rows, all human, and
+  no AI rows; the article and that/this requirements remove all 5. That check used the same
+  rows the rules were tuned against, so it is not an independent false-positive estimate. None
+  of the new rules fire on the `simple_english` or `non_native` slices, on arXiv, FineWeb-edu,
+  Gutenberg essays, or wiki_2023. Seed-set eval is unchanged (rules TPR at 1% FPR 0.706).
+- **The label does not change, on purpose.** The post now shows five findings and scores 11.3,
+  still "low". Parallelism is a weak dimension and one medium insight hit in 405 words is 0.08,
+  below the corroboration ramp. The post is dense with specifics (rates, SVB, the reverse repo
+  facility) and its author has written in this register for years; "argue the other side, then
+  concede narrowly" is ordinary op-ed practice. `tests/test_op_ed_rhetoric.py` locks in both the
+  findings and the conservative label. No local corpus holds current-model op-eds or human
+  pundit blogs, so raising the weight of this register would be a guess.
+
+## 0.14.1
+
+ASCII dashes. Schema unchanged (0.14.0).
+
+- **ASCII dashes count as dashes.** `FORMATTING_EM_DASH` counted only the Unicode em and en dash,
+  so the same habit typed as `--` scored nothing. Models writing into terminals, commit messages,
+  and code comments type `--`, and swapping one for the other is a known way to strip the tell.
+  Two forms now count toward the dash-to-comma ratio: two or three hyphens with a space on each
+  side between words ("the model -- which was new -- failed"), and two or three hyphens between
+  two lowercase letters ("the plan--simple--worked"). CLI flags, `<!--` and `-->`, rule lines,
+  numeric ranges, decrements, and capitalized compounds such as "Wenner--Gren" do not count: in
+  the long-form corpus, three of the four unspaced human uses were names or titles. A spaced
+  single hyphen is not counted. The rule id is unchanged, and the summary span still anchors on
+  the first Unicode dash when a document has one, so `--baseline-file` fingerprints do not change
+  for documents that already fired. `PARALLEL_NOT_EMDASH_ITS` also matches "is not X -- it's Y".
+- **Measured cost.** Long-form AUROC 0.7048 to 0.7033 and PR-AUC 0.5933 to 0.5913; TPR at 1% FPR
+  is unchanged at 0.1333. In that corpus `--` appears in 7 of 120 human documents and 1 of 60 AI
+  documents. Those rows are older text than the ASCII output this change targets, so the corpus
+  measures the cost and not the benefit. The benchmark and both fairness slices contain no dashes
+  of any kind, and their numbers are unchanged.
+
+## 0.14.0
+
+Metadiscourse. Schema 0.14.0 (new `metadiscourse` dimension).
+
+- **`metadiscourse`**: writing that refers to the text rather than to its subject. Hyland's
+  (2005) *interactive* metadiscourse: frame markers ("in this section we will discuss"),
+  endophoric markers ("as noted above"), code glosses ("put simply:"), and prose-grading ("the
+  defensible version is"). The interactional half was already covered: hedges by
+  `weasel_attribution`, boosters by `significance_inflation`, attitude markers by
+  `performative_candor`. Ten core rules, three in an opt-in `--broad` tier. Weight 2.0,
+  `academic` and `technical` 0.5, `blog` 1.15, `social` 0.9. Excluded from the ML `FEATURE_ORDER`.
+- **Concentration, not just rate.** Every phrase pack scores hits per 100 words, which cannot see
+  this defect in long-form prose: the passage that prompted the dimension saturates
+  `formulaic_structure` at 1.0 at 123 words and scores 0.064 at 3,373. The dimension scores
+  `max(rate, concentration)`, where concentration is the longest run of consecutive
+  *evidence-free* metadiscourse sentences, mapped `{2: 0.35, 3: 0.55, 4: 0.75, 5+: 0.90}` and
+  independent of document length. A 3,307-word document with one buried three-sentence run reads
+  0.55, and `--by-paragraph` puts that paragraph at 62.5 against ~10 for every other one.
+- **The evidence gate.** A marker only counts when its sentence carries no name, number, date,
+  URL, or identifier. "In summary, Japan took 34 years to recover from 1989" is a real summary
+  and is exempt; "Precision matters here because the counter-argument will not survive sloppy
+  phrasing" is not. This is the fairness gate as much as the precision gate: ESL and
+  simple-English writers use restatement scaffolding over concrete facts, and those sentences
+  carry facts. `concrete_evidence_count()` gained an opt-in `spelled_numbers` flag for it, used
+  only here; `genericity` is calibrated against the digit-only count and is unchanged.
+- **A terminal-recap rule was built and then dropped.** It flagged a closing section that both
+  announced itself as a summary and restated the body, implementing a report line the spec has
+  listed since v0.1. It produced no change on any of the three eval sets, and review found it
+  could not do the job: shared vocabulary is not shared claims, and against a body of dated
+  market facts a closer offering generic new advice scored 0.385 while a close paraphrase scored
+  0.333. It also charged most for exactly the fact-restating sentences the dimension's own
+  fairness gate exempts. Not shipped.
+- **`INSIGHT_LOAD_BEARING` matches the predicative form.** It matched only "load-bearing
+  <prose-noun>", so "This distinction is load-bearing" (the commoner form, and the one in this
+  repo's own CLAUDE.md) went unflagged. The engineering sense stays quiet.
+- **Eval.** Eight `label 0` rows added to `benchmark.jsonl` across `general`, `simple_english`,
+  and `non_native`. Negatives only, on purpose: rows written to contain the constructions the
+  rules were written to match would raise TPR without measuring anything. They found two real
+  defects, both fixed here: a single low-severity marker saturating the dimension in a
+  short document (the density denominator is now floored at 100 words), and code glosses firing
+  over concrete facts. No `META_` rule fires on either fairness slice; `general` and
+  `non_native` FPR stay 0.00.
+- **Density floor, opt-in.** `per_hundred_words` amplifies a 16-word document 6.25x, so one
+  low-severity hit saturates a dimension at 1.0. `metadiscourse` opts into a 100-word floor
+  because it is the one dimension that is neither weak-damped nor corroborating. Applying the
+  floor to every dimension was tried and reverted: it *raised* scores on short text carrying human
+  signal (a saturated slop dimension cannot fall further while the negative `human_writing_signals`
+  counterweight is shrunk: 75.4 to 80.0 on a 36-word paragraph) and it inverted `--by-paragraph`
+  ranking, which tracks density rather than hit count (a 57-word mild paragraph outranked a
+  16-word dense one). Both are worse than the false positive it fixed.
+- **Known limitation, not fixed.** The residual `simple_english` FPR of 0.05 is
+  `FORMULAIC_SIMPLY_PUT` firing on "In other words, you need two coins before you get on" at 66.0,
+  a pre-existing false positive in a shipped rule, made visible because these rows exercise it. It
+  is also what takes the benchmark's headline `TPR@1%FPR` to 0.329, by raising the 1%-FPR
+  operating point; with `metadiscourse` disabled the same set gives the same threshold and the
+  same TPR. Fixing it needs its own calibration pass, not a floor bolted on at release time.
+  `longform` (0.133) and `wiki_aicleanup` (0.111) are unchanged.
+- **`insight_signaling` now skips quoted text.** `InsightSignaling` was the one quote-sensitive
+  pack without `skip_quoted=True`, so a style guide, critique, or prompt log that *quotes* an
+  insight-signaling phrase was charged for writing it; this repo's own README flagged on the
+  sentence documenting `INSIGHT_LOAD_BEARING`. Scores and `INSIGHT_*` findings on corpora
+  containing quoted examples will drop relative to 0.13.0, and a `--baseline-file` built on
+  0.13.0 will report those findings as resolved.
+- **Hard-wrapped prose is handled conservatively.** pysbd ends a sentence at every line break, so
+  hard-wrapped text (code comments, commit messages, plain-text files) arrives as fragments, and a
+  clause-initial marker matched against a fragment fired mid-sentence: a wrapped paragraph with no
+  metadiscourse in it escalated to a run finding. A paragraph that contains a line break or an
+  HTML comment now contributes no sentence to a run, and a marker in it is judged against the
+  evidence in the whole paragraph. Clause-initial metadiscourse patterns share one anchor
+  (`{CLAUSE_START}` in the YAML) that refuses a line break after a bare word. Markers inside an
+  HTML comment are not charged. The clause-initial rules that shipped in 0.13.0 keep their
+  anchors. The release sweep wraps every plain-prose corpus document at 60 columns and again after
+  every bracket, quote, colon, and semicolon, and finds no added metadiscourse finding.
+- **Known limits of `metadiscourse` on line-structured text, not fixed in 0.14.0.** Found in
+  review. Turn the dimension off with `disabled_dimensions` if they matter for your input.
+  - A hard wrap inside a quoted marker phrase can add a finding, because quotation marks are not
+    paired across a line break.
+  - A paragraph carrying an HTML comment, including a suppression comment for an unrelated rule,
+    forms no run, and a fact anywhere in it exempts its evidence-gated markers.
+  - Text that separates paragraphs with single newlines, such as extracted web articles, forms no
+    run, and one fact in it exempts every evidence-gated marker.
+  - A clause after an unpunctuated heading line, a colon, or a semicolon is not anchored.
+  - A long single-newline document dense with markers scans slowly: 400 marker sentences take
+    about 5 seconds, against 0.5 seconds when the same sentences share one line.
+- **Disabling a run's licensing rule removes the run.** `disabled_rules` and inline suppression
+  filter by rule id after extraction, so silencing the one `META_` rule inside a run left the
+  `META_RUN_OF_META_SENTENCES` finding in the report at medium severity while the dimension
+  scored 0.0, and `--fail-on medium` exited non-zero for a rule the user had turned off. A
+  `SpanPruned` hook in `features/base.py` runs after the scorer's filter for exactly this.
+- **`marketing` profile: `metadiscourse` 0.8.** It was the one profile with no entry, so it
+  defaulted to 1.0 in the genre where "TL;DR:" and "Key takeaways:" are native register.
+- **`metadiscourse` corroborates nothing.** It is in neither `WEAK_DIMENSIONS` nor
+  `CORROBORATING_DIMENSIONS`. Weak means damped to 0.3 when alone, which is the failure it exists
+  to fix; but left in the derived corroborating set, its length-invariant concentration term
+  clears the gate by itself, and three meta sentences took an otherwise identical 600-word
+  document from 46.4 "mild" to 97.6 "severe" by counting every weak dimension at full weight.
+  `weights.py:NON_CORROBORATING_DIMENSIONS` is the new subtraction.
+
 ## 0.13.0
 
 Detection coverage. Schema 0.13.0 (new `structure_tells` dimension).

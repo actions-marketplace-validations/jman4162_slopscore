@@ -35,6 +35,21 @@ class SpanScored(Protocol):
 
 
 @runtime_checkable
+class SpanPruned(Protocol):
+    """A feature with spans that are only valid in the company of other spans.
+
+    The scorer drops disabled and suppressed spans by rule id, one at a time. A span that was
+    only emitted BECAUSE another span existed (the metadiscourse run finding, licensed by a
+    metadiscourse rule inside it) survives that filter when its licence does not, and then sits
+    in the report at medium or high severity while ``score_spans`` refuses to charge it: a
+    finding that trips ``--fail-on`` and contributes nothing. ``prune_spans`` runs on the
+    survivors so evidence and points appear and disappear together.
+    """
+
+    def prune_spans(self, doc: Document, spans: list[Evidence]) -> list[Evidence]: ...
+
+
+@runtime_checkable
 class Cataloged(Protocol):
     """A feature that can list every rule id it may emit (for suppression-name validation)."""
 
@@ -56,11 +71,39 @@ def registry() -> list[Feature]:
     return list(_REGISTRY)
 
 
-def per_hundred_words(count: float, word_count: int) -> float:
-    """Normalize a raw (possibly weighted) count to a rate per 100 words."""
+# Optional floor on the density denominator, opt in per call site via ``min_words``.
+#
+# It is NOT applied by default, and that is a measured decision rather than caution. Floored
+# globally it did two things its own rationale did not predict. It raised scores on short text
+# carrying human signal, because a saturated slop dimension cannot be lowered any further while
+# ``human_writing_signals``, a negative weight, is shrunk, removing the counterweight: a
+# 36-word slop paragraph with a date and a price went 75.4 up to 80.0. And it inverted
+# ``--by-paragraph``: under a floor a paragraph's score tracks its absolute hit COUNT rather than
+# its density, so a 57-word mild paragraph outranked a 16-word dense one (12.6 against 10.1,
+# where unfloored the order is the right way round at 16.4 against 20.6). Ranking paragraphs is
+# the entire purpose of that flag.
+#
+# ``metadiscourse`` opts in because it is the one dimension that is neither weak-damped nor
+# corroborating, so a single low-severity marker saturating it in a 17-word document had nothing
+# else holding it back: a clean benchmark row scored 50.2, and 20.2 with the floor.
+#
+# The trade-off is real and is not papered over: below 100 words that dimension scores on hit
+# COUNT rather than density, so it does not rank short paragraphs the way ``--by-paragraph``
+# wants. Removing the floor does not restore density there: the rate saturates at 1.0 instead,
+# for one hit in eleven words as much as four in forty-four, so the choice is between
+# count-based and pinned-at-maximum, and count-based is the one that does not convict clean
+# short text. ``tests/test_conservatism.py`` pins both halves of that comparison.
+MIN_RATE_WORDS = 100
+
+
+def per_hundred_words(count: float, word_count: int, min_words: int = 0) -> float:
+    """Normalize a raw (possibly weighted) count to a rate per 100 words.
+
+    ``min_words`` floors the denominator; see the note above for why it is off by default.
+    """
     if word_count <= 0:
         return 0.0
-    return 100.0 * count / word_count
+    return 100.0 * count / max(word_count, min_words)
 
 
 def saturating(rate: float, full_scale: float) -> float:
@@ -78,7 +121,9 @@ SEVERITY_WEIGHT: dict[Severity, float] = {
 }
 
 
-def severity_rate_score(doc: Document, spans: list[Evidence], full_scale: float) -> float:
+def severity_rate_score(
+    doc: Document, spans: list[Evidence], full_scale: float, min_words: int = 0
+) -> float:
     """The shared rule-pack scoring rule: severity-weighted hits per 100 words, saturating."""
     weighted = sum(SEVERITY_WEIGHT[s.severity] for s in spans)
-    return saturating(per_hundred_words(weighted, doc.word_count), full_scale)
+    return saturating(per_hundred_words(weighted, doc.word_count, min_words), full_scale)

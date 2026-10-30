@@ -94,7 +94,7 @@ slopscore-lint scan src/app.py                       # lints docstring/comment p
 slopscore-lint scan post.md --by-paragraph           # surfaces a sloppy section in a clean doc
 slopscore-lint scan draft.md --suggest               # adds advisory rewrite suggestions
 slopscore-lint scan essay.md --broad                 # opt-in tier: rationalist jargon + bare weasel words
-slopscore-lint explain                               # what each of the 16 dimensions detects
+slopscore-lint explain                               # what each of the 18 dimensions detects
 ```
 
 ### Lint the prose inside code
@@ -156,7 +156,7 @@ slopscore-lint scan post.md --format html -o report.html          # highlighted-
 ```yaml
 repos:
   - repo: https://github.com/jman4162/slopscore
-    rev: v0.13.0
+    rev: v0.14.3
     hooks:
       - id: slopscore-lint
         args: ["--fail-on", "high"]
@@ -245,6 +245,15 @@ for f in Path("posts").glob("*.md"):
 ```
 
 ## Status
+
+v0.14: `metadiscourse` for writing that refers to the text rather than to its subject: frame
+markers ("in this section we will discuss"), endophoric markers ("as noted above"), code glosses
+("put simply:"), and prose-grading ("the defensible version is"). It scores the longest run of
+consecutive metadiscourse sentences that carry no name, number, date, or identifier, so a run of
+three reads the same in a 120-word passage and a 3,000-word essay, where a per-100-word rate
+would have divided it away. A marker over a concrete fact is exempt, which is both the precision
+gate and the fairness gate. Also fixes `load-bearing` in predicative position ("this distinction
+is load-bearing"), which had no rule.
 
 v0.13: detection coverage. A `structure_tells` dimension scores the chatbot Markdown shape
 (emoji headings, `**Label:** text` bullet runs, heading-level jumps, rules between every section,

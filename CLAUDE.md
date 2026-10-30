@@ -75,8 +75,11 @@ Key invariants when extending:
   performative_candor (weak), superficial_analysis, weasel_attribution, parallelism,
   copula_avoidance, genericity, redundancy, cadence_sameness, formatting_tells (weak),
   structure_tells (weak, v0.13: Markdown block shape from `Document.blocks`),
-  prompt_residue, human_writing_signals (negative). `genericity`, `cadence_sameness`, `redundancy`,
+  prompt_residue, metadiscourse, human_writing_signals (negative). `genericity`, `cadence_sameness`, `redundancy`,
   and `human_writing_signals` are STATISTICAL (no spans, low weight, never corroborate).
+  `formatting_tells` counts ASCII dashes with the Unicode ones: two or three hyphens spaced
+  between words, or unspaced only between two lowercase letters. The lowercase guard keeps
+  names and titles ("Wenner--Gren") out; do not widen it without corpus numbers.
   `insight_signaling` (v0.7) and `performative_candor` (v0.9) are rules-only — deliberately
   excluded from the ML `FEATURE_ORDER`, so they need no model retrain.
 - **Personal baseline:** `scoring/calibrate.py` builds robust per-dimension stats from a corpus;
@@ -101,7 +104,7 @@ Linter maturity (v0.4): `config_file.py` loads `slopscore.toml`/`[tool.slopscore
 carries `disabled_dimensions/rules`, `rule_severity`, `suggest`). The scorer skips disabled
 dimensions and post-filters evidence for disabled rules, severity overrides, and inline suppression
 (`suppress.py`, HTML-comment grammar). `report/baseline.py` fingerprints findings for
-`scan --baseline-file --fail-on-new`. `unsupported_claims` is now a real `_PhrasePack`
+`scan --baseline-file --fail-on-new`. `unsupported_claims` is now a real `PhrasePack`
 (`data/patterns/claims/`). Opt-in `--suggest` adds `Evidence.suggestion` + SARIF `fixes`
 (`features/suggestions.py`, `data/patterns/suggestions/`) — advisory, excluded from score/`--fail-on`
 (`SUGGEST_*` skipped in `max_severity`). `detectors/` is an interface-only authorship adapter
@@ -171,6 +174,57 @@ keeps the ESL calques "Honestly speaking"/"Frankly speaking" quiet — do not re
 "Sincerely,"/"Truly," to that rule: patterns compile under MULTILINE, so `^` matches every line
 start and they would fire on email sign-offs.
 
+Metadiscourse (v0.14): writing that refers to the text rather than to its subject. This is
+Hyland's
+(2005) *interactive* metadiscourse (frame markers, endophoric markers, code glosses), where the
+interactional half was already covered by `weasel_attribution`, `significance_inflation`, and
+`performative_candor`. Rules in `data/patterns/metadiscourse/` plus a `--broad` tier. Three things
+make it unlike the other packs.
+
+- **It subclasses `PhrasePack` rather than instantiating one** (`features/metadiscourse.py`),
+  because hits-per-100-words cannot see this defect in long-form prose: the originating passage
+  reads 1.0 at 123 words and 0.064 at 3,373. It scores `max(rate, concentration)`. The
+  concentration term is the longest run of consecutive sentences that carry a marker and **no**
+  concrete evidence, mapped `{2: 0.35, 3: 0.55, 4: 0.75, 5+: 0.90}` and length-invariant. Its
+  `Evidence` must be excluded from the rate term (no double-charging), must honor `rule_severity`
+  overrides (`_severity_factor`), and **anchors on the run's first sentence only** — a
+  multi-sentence finding span makes `report/html.py` swallow every phrase highlight inside it and
+  makes `report/baseline.py` fingerprints change on unrelated edits. Run length is therefore
+  recovered by re-deriving runs from the document, never from the span text. **Line-structured paragraphs
+  never form a run.** A paragraph containing a line break or an HTML comment contributes no
+  sentence to a run, and a marker in it is judged against the evidence in the whole paragraph.
+  This is a conservative rule, not a guarantee: it does not make wrapped text score the same as
+  flat, and review round 10 found cases where wrapping still adds a finding (a wrap inside a quoted
+  marker phrase). CHANGELOG 0.14.0 lists the known limits. Do not replace the rule with
+  per-fragment handling: review rounds 5 to 9 tried skipping, re-joining, flattening, and fragment
+  detection, and each let wrapping create a finding. Non-prose blocks (`heading`, `list_item`) and
+  any sentence carrying a fact also break a run; a short factless sentence is neutral. Markers
+  inside an HTML comment are not charged. Clause-initial rules and markers write `{CLAUSE_START}`,
+  expanded by `_ruleset.py:compile_rule_pattern`, which every YAML loader must use. The six
+  clause-initial rules that predate v0.14 keep their own anchors on purpose; see the comment on
+  `CLAUSE_START`.
+  The run's `Evidence` is licensed by a `META_` rule inside it, and `prune_spans`
+  (`base.py:SpanPruned`) re-applies that licence after the scorer's `disabled_rules` and
+  suppression filtering, so a disabled rule takes its run with it. A terminal-recap term was
+  built and dropped: see CHANGELOG 0.14.0.
+- **It is in neither `WEAK_DIMENSIONS` nor `CORROBORATING_DIMENSIONS`.** Weak means damped x0.3
+  alone, which is the failure it exists to fix. But left in the derived corroborating set, a
+  length-invariant 0.55 clears the gate on its own: three meta sentences took an otherwise
+  identical 600-word document from 46.4 "mild" to 97.6 "severe" by counting every weak dimension
+  at full weight. `weights.py:NON_CORROBORATING_DIMENSIONS` subtracts it: full weight for
+  itself, no vote on anyone else.
+- **The evidence gate is the fairness gate.** A marker over a concrete fact is exempt, because
+  restatement scaffolding over facts is an ESL clarity strategy. `concrete_evidence_count()` in
+  `specificity.py` is the shared predicate, with an opt-in `spelled_numbers` flag used only here
+  (genericity is calibrated on digits only). Cut the marker's own characters out before counting
+  or a marker exempts itself ("In plain English" contains "English"). The density denominator is
+  floored at 100 words; that is a local fix for a defect every `severity_rate_score` pack shares.
+
+No rules were migrated out of `formulaic.yaml`, which would break rule-id suppressions and
+baseline fingerprints; the run detector reads `data/lexicons/metadiscourse_markers.yaml`, a
+non-scoring superset compiled with the same `regex` flags as the YAML rule files, so it sees the
+whole surface without them moving.
+
 ## Project state
 
 v0.1–v0.6 are implemented and green (ruff/mypy/pytest). The repository also holds two reference
@@ -190,7 +244,7 @@ the package or are public.
 ## What this project is (and is not)
 
 `slopscore` is a transparent **AI-slop pattern detector** — not an AI-authorship detector.
-This distinction is load-bearing and shapes every API/report decision:
+This distinction shapes every API and report decision:
 
 - It outputs a 0–100 **SlopScore** measuring density of formulaic, generic, low-specificity,
   over-polished, LLM-associated writing patterns — plus per-dimension scores, a separate
