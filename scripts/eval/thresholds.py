@@ -237,7 +237,8 @@ def main() -> None:
     payload = {
         "strictness": args.strictness,
         "min_words": args.min_words,
-        "sources": [str(p) for p in paths],
+        # ~-relative so the committed JSON never records a local home path.
+        "sources": [str(p).replace(str(Path.home()), "~", 1) for p in paths],
         "profiles": results,
     }
     args.json.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")

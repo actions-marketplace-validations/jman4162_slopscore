@@ -62,3 +62,12 @@ rules:
     pattern: "\\bsetting the (?:stage|scene|foundation|groundwork) for\\b"
     explanation: "'setting the stage for' transition puffery."
     source: "WP:AILEGACY"
+
+  # v0.16: Graphite (2026-09) lists "single most" and "arguably the most" among Opus 5 intensifier
+  # frames. Zero hits in 1,529 human corpus documents. Low: "the single most common cause" is
+  # also a plain statement of rank in human reporting.
+  - rule_id: SIGNIF_SINGLE_MOST
+    severity: low
+    pattern: "\\b(?:the|our|its|their|your) single most (?:important|significant|powerful|valuable|critical|consequential|useful|effective)\\b|\\barguably the most\\b"
+    explanation: "'the single most important' — superlative intensifier in place of a ranked fact."
+    source: "Graphite AI Tells (2026-09)"

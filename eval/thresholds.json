@@ -2,11 +2,11 @@
   "strictness": "conservative",
   "min_words": 100,
   "sources": [
-    "/Users/johnhodge/.cache/slopscore/wiki_aicleanup.jsonl",
-    "/Users/johnhodge/.cache/slopscore/fineweb_edu_pre2022.jsonl",
-    "/Users/johnhodge/.cache/slopscore/arxiv_pre2022.jsonl",
-    "/Users/johnhodge/.cache/slopscore/wiki_2023.jsonl",
-    "/Users/johnhodge/.cache/slopscore/gutenberg_essays.jsonl"
+    "~/.cache/slopscore/wiki_aicleanup.jsonl",
+    "~/.cache/slopscore/fineweb_edu_pre2022.jsonl",
+    "~/.cache/slopscore/arxiv_pre2022.jsonl",
+    "~/.cache/slopscore/wiki_2023.jsonl",
+    "~/.cache/slopscore/gutenberg_essays.jsonl"
   ],
   "profiles": {
     "blog": {

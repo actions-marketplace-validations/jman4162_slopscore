@@ -59,10 +59,21 @@ rules:
   # fact. "This example illustrates" is gated to a lesson object (how/why/that/the importance) so
   # a textbook "This example illustrates the use of a for loop" stays quiet. "key lesson" is left
   # out: a post-mortem that lists its lessons is using the word literally.
+  # v0.16: "Together, these" (Graphite: 95x the human rate in GPT-6 Astra output; 1 human and 1
+  # AI corpus row).
   - rule_id: FORMULAIC_LESSON_FRAME
     severity: low
-    pattern: "\\bthe (?:larger|broader|bigger|real|deeper) (?:lesson|takeaway) (?:here )?(?:is|was)\\b|\\bthis (?:case|example|episode|story|experience) (?:illustrates|underscores|highlights) (?:how|why|that|the (?:importance|need|value|power|broader|larger))\\b|{CLAUSE_START}taken together,"
+    pattern: "\\bthe (?:larger|broader|bigger|real|deeper) (?:lesson|takeaway) (?:here )?(?:is|was)\\b|\\bthis (?:case|example|episode|story|experience) (?:illustrates|underscores|highlights) (?:how|why|that|the (?:importance|need|value|power|broader|larger))\\b|{CLAUSE_START}taken together,|{CLAUSE_START}together,? these\\b"
     explanation: "'The larger lesson is' / 'This case illustrates how' section wrap-up."
+
+  # v0.16: a transition Graphite (2026-09) measured in current models: "another dimension" (117x,
+  # GPT-6 Astra). Zero hits in 1,529 human corpus documents. "Ultimately, this" (78x, Gemini) is
+  # left to the `template_transitions` lexicon, which already charges "ultimately"; "What comes
+  # next" (28x) was left out as everyday speech.
+  - rule_id: FORMULAIC_MODEL_TRANSITION
+    severity: low
+    pattern: "\\b(?:adds?|adding|brings?|offers?) (?:yet )?another dimension\\b|\\banother dimension (?:to|of)\\b"
+    explanation: "'adds another dimension' — current-model transition filler."
 
   - rule_id: FORMULAIC_GAME_CHANGER
     severity: medium
@@ -140,5 +151,8 @@ rules:
 
   - rule_id: FORMULAIC_DESPITE_CHALLENGES
     severity: medium
-    pattern: "\\b(?:despite (?:these|its|their|the|such) (?:\\w+ )?challenges|challenges and (?:future )?(?:prospects|outlook|opportunities)|looking ahead,|the (?:road|path|way) ahead)\\b"
+    # v0.16: "faces several challenges" (WP:FACESCHALLENGES opener; AI-only in the corpora, 1
+    # row). "Continues to thrive" was considered and left out: it is the closer of the formula
+    # but also ordinary local-news prose on its own.
+    pattern: "\\b(?:despite (?:these|its|their|the|such) (?:\\w+ )?challenges|challenges and (?:future )?(?:prospects|outlook|opportunities)|looking ahead,|the (?:road|path|way) ahead|fac(?:es|ed|ing|e) (?:several|numerous|many|various|a number of) (?:\\w+ )?challenges)\\b"
     explanation: "'Despite these challenges' outline-style conclusion (WP:AICHALLENGES)."

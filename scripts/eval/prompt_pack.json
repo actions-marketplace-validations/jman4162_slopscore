@@ -1,0 +1,242 @@
+{
+  "version": "2026-10",
+  "method": "Topic and fact notes written from a pre-2022 or 2023 human article; each model writes an article of matched length from the notes alone, so the human wording never reaches it (Graphite 2026 design). The notes are terse fact fragments with no evaluative wording, so they carry no style into the output.",
+  "template": "Write an article of about {words} words about {topic}, using the notes below. Reply with the article only.\n\nNotes:\n{notes}",
+  "items": [
+    {
+      "id": "fw119", "source": "fineweb_edu_pre2022", "row": 119, "words": 500,
+      "topic": "a museum field-trip activity on globalization for school classes",
+      "notes": [
+        "museum-wide activity: student teams gather data on everyday things they use",
+        "guiding question: what would life be like if you could only buy foods native to New York State",
+        "three teams, each with a chaperone or teacher: foods (Super Kids Market), fashions (museum collections), fads (TimeLab)",
+        "each team makes a chart of its findings and leads a short discussion on global interdependence",
+        "before the visit: post North, South, East, West on classroom walls; each student writes a US state on a card and stands where it would be; repeat with continents, oceans, countries",
+        "one-week 'globalization journal': imported cheese, imported CDs, a TV show made abroad, news about international business",
+        "classroom world map where students pin objects and images from other countries; weekly discussion"
+      ]
+    },
+    {
+      "id": "fw125", "source": "fineweb_edu_pre2022", "row": 125, "words": 650,
+      "topic": "how the calendar shapes the birds seen in Ohio through the year",
+      "notes": [
+        "'almanac' comes from Arabic al-manakh (calendar, earlier weather); possibly from a place where camels kneel, a seasonal camp",
+        "Ohio sits between the Mississippi and Atlantic flyways, at the edge of prairie and forest",
+        "latitude governs timing: migration, daylight length, breeding; glaciers shaped Lake Erie, the Ohio River, plains and hills",
+        "breeding success depends on timing: arriving early risks too little food; a second brood risks food running out",
+        "over about 200 years humans removed predators, warmed the climate, introduced exotic species, destroyed habitat",
+        "50 or more species are present year-round, but crows, robins, blue jays and song sparrows are partly migratory, so the individuals change",
+        "robins eat worms alone in summer, flock to eat fruit in winter",
+        "range expansions: mockingbirds, titmice, cardinals, house finches; lost from Ohio: prairie-chickens, Bachman's sparrow, Bewick's wren",
+        "extinct: passenger pigeon, Eskimo curlew, Carolina parakeet"
+      ]
+    },
+    {
+      "id": "fw135", "source": "fineweb_edu_pre2022", "row": 135, "words": 700,
+      "topic": "hyperbolic functions in mathematics",
+      "notes": [
+        "analogs of the trigonometric functions: sinh, cosh, tanh and their inverses (arsinh etc.)",
+        "points (cos t, sin t) trace a unit circle; points (cosh t, sinh t) trace the right half of the hyperbola x^2 - y^2 = 1",
+        "introduced in the 18th century by Johann Heinrich Lambert",
+        "appear in solutions of the catenary equation and Laplace's equation (electromagnetism, heat transfer, fluid dynamics, special relativity)",
+        "identity cosh^2 x - sinh^2 x = 1",
+        "derivative of sinh is cosh and of cosh is sinh (no sign change, unlike cos)",
+        "cosh is even, sinh is odd, sinh 0 = 0, cosh t >= 1",
+        "Osborn's rule converts trigonometric identities to hyperbolic ones by flipping signs on some product terms",
+        "the curve a cosh(x/a) is the catenary, the shape of a hanging chain",
+        "periodic with complex period 2*pi*i; defined from exponentials, e.g. sinh x = (e^x - e^-x)/2"
+      ]
+    },
+    {
+      "id": "fw22", "source": "fineweb_edu_pre2022", "row": 22, "words": 450,
+      "topic": "a study finding that black holes in small galaxies are smaller than expected",
+      "notes": [
+        "Nicholas Scott and Alister Graham, Swinburne University of Technology, Melbourne",
+        "database of 77 galaxies and their central black holes, data from Chile, Hawaii and the Hubble Space Telescope",
+        "black hole mass measured from how fast stars orbit it",
+        "older theory: fixed ratio of galaxy mass to black hole mass; it held for large galaxies only",
+        "finding: each ten-fold drop in galaxy mass gives a hundred-fold drop in black hole mass",
+        "small galaxies have denser central star populations, so their black holes grow faster",
+        "when large galaxies merge the black holes double; when small ones merge they quadruple",
+        "possible answer to the missing intermediate-mass black holes (10,000 to a few hundred thousand solar masses)",
+        "paper to appear in the Astrophysical Journal; next-generation large telescopes may see them directly"
+      ]
+    },
+    {
+      "id": "fw61", "source": "fineweb_edu_pre2022", "row": 61, "words": 500,
+      "topic": "sidereal time",
+      "notes": [
+        "stars appear to rise and set because the Earth rotates",
+        "this apparent motion led early thinkers to an Earth-centered universe; Copernicus corrected it",
+        "a sidereal day is just under 24 hours, one rotation relative to the stars",
+        "differs from solar time (based on the Sun) and lunar cycles (about 28 days)",
+        "defined from the hour angle of the vernal equinox",
+        "the equator and the prime meridian at Greenwich are the zero lines of latitude and longitude",
+        "at the equinoxes day and night are each 12 hours",
+        "astronomers use sidereal time to predict star positions; values are tabulated in an ephemeris",
+        "the U.S. Naval Observatory offers an online sidereal-time clock"
+      ]
+    },
+    {
+      "id": "fw67", "source": "fineweb_edu_pre2022", "row": 67, "words": 400,
+      "topic": "restoring longleaf pine forests in Mississippi",
+      "notes": [
+        "longleaf pines survived Hurricane Katrina 48 percent better than loblolly pines",
+        "longleaf forests once covered 90 million acres in the South; now about 3 million",
+        "gopher tortoise is a keystone species; more than 300 species use its burrows",
+        "at least 122 endangered or threatened species; up to 300 groundcover plant species per acre",
+        "landowner Orby Wright, Purvis, Mississippi, bought about 2,000 acres (Quail Hollow Ranch) from a pecan company",
+        "USDA Natural Resources Conservation Service, Healthy Forests Reserve Program, part of the nine-state Longleaf Pine Initiative",
+        "the ecosystem needs periodic fire; Wright installed fire lanes and does prescribed burns",
+        "NRCS has helped restore 1,641 acres and burn 1,812 acres in Mississippi; 669 acres restored in Lamar County in 2010",
+        "participants get money for planting, firebreaks, prescribed burning, invasive-plant control"
+      ]
+    },
+    {
+      "id": "fw12", "source": "fineweb_edu_pre2022", "row": 12, "words": 550,
+      "topic": "a Caltech experiment raising an obelisk with a kite",
+      "notes": [
+        "team led by Gharib at Caltech, with Graff and Clemmons",
+        "raised a four-ton concrete obelisk using a kite and a pulley system",
+        "plan to replace steel scaffolding and pulleys with wooden ones, and later windlasses like those on Egyptian ships",
+        "the obelisk base drags a few feet as it rises, which keeps it from swinging past vertical",
+        "a couple of workers guide the operation with ropes",
+        "no evidence that Egyptians used kites; a frieze in a Cairo museum shows an unusual wing pattern above men near what may be ropes",
+        "Gharib: 'We're not Egyptologists'; the aim is to test whether the method is possible",
+        "next tests: a ten-ton stone; hope to try an obelisk still lying in an Egyptian quarry; a drag chute might replace the kite",
+        "steady winds up to 30 mph are common near the pyramid and obelisk sites"
+      ]
+    },
+    {
+      "id": "fw4", "source": "fineweb_edu_pre2022", "row": 4, "words": 450,
+      "topic": "how wind shear helps produce tornadoes",
+      "notes": [
+        "wind shear is the change in wind speed and direction with height",
+        "most strong tornadoes come from supercell thunderstorms",
+        "thunderstorms are driven by an updraft of rising air",
+        "shear makes a horizontal rolling column of air",
+        "rain-cooled air is heavier and forms a downdraft",
+        "the updraft tilts the horizontal spinning column to vertical",
+        "the result is a rotating thunderstorm that can produce a tornado"
+      ]
+    },
+    {
+      "id": "wk96", "source": "wiki_2023", "row": 96, "words": 550,
+      "topic": "the Japanese community in Melbourne, Australia",
+      "notes": [
+        "includes expatriates, temporary residents and Japanese Australians",
+        "as of 2007 many lived in suburbs such as Brighton and Camberwell; young people in Prahran; single corporate employees in Toorak",
+        "Camberwell North: 110 Japan-born residents in 1996, 116 in 2001",
+        "families settled around Caulfield after the Japanese School of Melbourne opened on 13 May 1986",
+        "institutions: Japanese Chamber of Commerce and Industry (1963), Japanese Society of Melbourne (1965), Japan Club of Victoria, Consulate-General",
+        "Saturday Japanese program from September 1972; supplementary school at Oakleigh South Primary School from 1986",
+        "in 1996, 400 children aged 6-15; about 75% attended Australian schools",
+        "Japan Festival in the City of Whitehorse; over 300 people at an athletics event in Fawkner Park on 26 October 1997 (Tetsuo Mizukami)"
+      ]
+    },
+    {
+      "id": "wk37", "source": "wiki_2023", "row": 37, "words": 800,
+      "topic": "North Mountain, a wildland in western Virginia",
+      "notes": [
+        "in the George Washington and Jefferson National Forests; part of the Craig Creek Cluster",
+        "Wilderness Society calls it a 'Mountain Treasure'",
+        "about 6 miles southeast of New Castle, Virginia, between VA 779 and Forest Road 224",
+        "North Mountain Trail (Forest Trail 263, 13.2 miles, yellow blazes); Deer, Turkey and Grouse trails about 1.5 miles each",
+        "old logging roads from early 20th-century timbering are still passable",
+        "forest of oaks, hickory, poplar, hemlock; table mountain pine needs fire because its cones open with heat",
+        "rare species: pirate bush, small spreading pogonia, sword-leaved phlox, orangefin madtom",
+        "elevation from 1,410 feet to 3,062 feet; about 75 percent underlain by Silurian sandstone",
+        "inventoried roadless area, protected from road building and timber sales",
+        "herbicide used on Tree of Heaven along Forest Road 224; 1998 Broad Run sale of 42 acres done as public firewood cutting"
+      ]
+    },
+    {
+      "id": "wk113", "source": "wiki_2023", "row": 113, "words": 500,
+      "topic": "the Trainer Refinery in Pennsylvania",
+      "notes": [
+        "in Trainer, Delaware County, on the Delaware River, 15 miles southwest of Philadelphia",
+        "owned since June 2012 by Monroe Energy, a subsidiary of Delta Air Lines",
+        "produces jet fuel, gasoline, diesel and home heating oil",
+        "1891: Union Petroleum leased 17 acres; the wooden plant burned in 1912",
+        "Sinclair Oil opened a $7 million plant on 17 March 1925",
+        "1955: new crude stills, about 120,000 barrels per day",
+        "later owners: Atlantic Richfield (1969), BP/SOHIO, Tosco (1996), Phillips, ConocoPhillips; shut in September 2011",
+        "Delta bought it in 2012 and spent about $100 million to shift 40% of output to jet fuel; capacity 185,000 barrels per day",
+        "2014: five-year deal with Bridger LLC for 65,000 barrels per day of domestic crude"
+      ]
+    },
+    {
+      "id": "wk4", "source": "wiki_2023", "row": 4, "words": 500,
+      "topic": "the blues song \"You've Got to Love Her with a Feeling\"",
+      "notes": [
+        "first recorded by Tampa Red in 1938 as \"Love with a Feeling\", a mid-tempo twelve-bar blues",
+        "Tampa Red on vocal and slide guitar, Black Bob Hudson on piano",
+        "Tampa Red recut it in May 1950 in Chicago style, and solo in 1961",
+        "Freddie King recorded it in Cincinnati on 26 August 1960 with stop-time breaks",
+        "released as a B-side on Federal Records; reached number 93 on the Billboard Hot 100 in 1961, his first chart single",
+        "Junior Wells recorded it on On Tap (1974) and live at Buddy Guy's Legends in November 1996",
+        "many blues artists covered it, making it a blues standard"
+      ]
+    },
+    {
+      "id": "wk131", "source": "wiki_2023", "row": 131, "words": 550,
+      "topic": "the Knorr Hut in the Wetterstein Mountains",
+      "notes": [
+        "mountain hut of the German Alpine Club's Munich Section, at 2,052 m",
+        "on the edge of the Zugspitzplatt, on the normal route from Garmisch-Partenkirchen to the Zugspitze",
+        "first built by 1855 as a small refuge, funded partly by merchant Angelo Knorr",
+        "run down by 1860; rebuilt and opened on 10 August 1873 for 20 to 25 people",
+        "approach from Garmisch-Partenkirchen through the Partnach Gorge and Reintal valley, 6 to 7 hours",
+        "approach from Ehrwald via the Ehrwalder Alm and the Gatterl, about 2.5 hours",
+        "base for the Jubilee Ridge to the Zugspitze, joined at about 2,650 m"
+      ]
+    },
+    {
+      "id": "wk110", "source": "wiki_2023", "row": 110, "words": 750,
+      "topic": "Sally Stevens, a session singer and vocal contractor",
+      "notes": [
+        "born 24 November 1939 in Los Angeles; studied music at UCLA",
+        "sings the main title of The Simpsons and of Family Guy",
+        "vocal contractor and singer for hundreds of films, including Forrest Gump, The Abyss and Amistad",
+        "first film scoring work in 1962 on How the West Was Won; later Doctor Zhivago and The Sound of Music",
+        "production singer in Las Vegas 1961-62; TV variety shows including The Carol Burnett Show",
+        "recorded with Frank Sinatra, Andy Williams, Neil Diamond and others",
+        "lead vocal on \"Tomorrow's Child\" at EPCOT's Spaceship Earth, 1986-1994",
+        "choral director of the Oscars broadcasts for over 20 years, through 2018",
+        "co-wrote \"Who Comes This Night\" with Dave Grusin, recorded by James Taylor in 2005",
+        "also publishes short fiction and poetry and exhibits black-and-white photography; long service on AFTRA and SAG boards"
+      ]
+    },
+    {
+      "id": "wk26", "source": "wiki_2023", "row": 26, "words": 550,
+      "topic": "The First Letter, a 1991 album by Wire",
+      "notes": [
+        "ninth studio album, released October 1991 on Mute Records, credited to \"Wir\"",
+        "the band became Wir after drummer Robert Gotobed left over the use of drum machines",
+        "the band then went on hiatus until 1999 and released new material again in 2002",
+        "single: \"So and Slow It Grows\"",
+        "\"Take It (For Greedy)\" is built from samples of Wire's own 1970s records; Colin Newman found that funny",
+        "Gotobed appears in sampled form through a snare drum taken from an old album",
+        "Bruce Gilbert sings lead on \"Ticking Mouth\"",
+        "Stereogum ranked it 11th of 15 Wire albums; Trouser Press called it livelier than A Bell Is a Cup; AllMusic said the textures matter more than the songs",
+        "produced by Wir and Paul Kendall"
+      ]
+    },
+    {
+      "id": "wk89", "source": "wiki_2023", "row": 89, "words": 800,
+      "topic": "Sergey Lugansky, a Soviet fighter pilot",
+      "notes": [
+        "born 1 October 1918 in Verniy (now Almaty, Kazakhstan); died 16 January 1977",
+        "graduated Orenburg Military Aviation School in December 1938",
+        "flew 59 sorties on the I-153 in the Winter War, 1939-40",
+        "at the front from October 1941; flew LaGG-3, then Yak-1 from 1943",
+        "the city of Alma-Ata paid for a custom-painted Yak-1 for him",
+        "1944: mock dogfight with a visiting American colonel flying a P-63",
+        "commanded the regiment from June 1944, renamed 152nd Guards Fighter Aviation Regiment",
+        "390 sorties and at least 34 solo victories; twice Hero of the Soviet Union (2 September 1943, 1 July 1944)",
+        "after the war commanded fighter divisions flying MiG-15 and MiG-17; General-Major of Aviation in 1957; retired December 1964",
+        "a 1968 stroke left him partly paralyzed; friend of fellow ace Talgat Bigeldinov"
+      ]
+    }
+  ]
+}

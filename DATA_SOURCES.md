@@ -35,6 +35,8 @@ Pulled by `scripts/eval/fetch.py` into `~/.cache/slopscore/`; never redistribute
 | source | id / access | license | label | use |
 |---|---|---|---|---|
 | Wikipedia AI Cleanup | category API (`wiki_aicleanup`) | CC-BY-SA-4.0 | suspected-AI (subjective) | **eval-only** real-world slop slice |
+| Wikipedia AI Cleanup, tagged since 2026-07 | `fetch.py wiki_aicleanup --since 2026-07 --full` | CC-BY-SA-4.0 | suspected-AI (subjective); controls are random current articles | **eval-only**; text is the current page, which editors may have cleaned after tagging |
+| Generated 2026 matched pairs | `scripts/eval/prompts.py` (prompts in `prompt_pack.json`; replies pasted from chat models by hand) | outputs governed by each model's terms; source articles as above | AI (model named per row) paired with the human source article | **eval-only**, never trains, never committed |
 | FineWeb-Edu | `HuggingFaceFW/fineweb-edu` | ODC-BY | educational quality 0-5 | train + eval (web-quality proxy) |
 | FinerWeb-10BT | `TurkuNLP/finerweb-10bt` | Apache-2.0 | line quality | train + eval (web-quality proxy) |
 | MAGE (Li et al.) | `yaful/MAGE` | CC-BY-4.0 | authorship (not slop) | authorship-null panel only |

@@ -129,3 +129,52 @@ date]` under `RESIDUE_PLACEHOLDER`.
 
 **How to check.** Search for `TBD`, `TODO`, `[`, and italic lines before anyone else reads the
 document. Track the unfinished parts in a separate list.
+
+## Corrective disclaimers about sources
+
+**Example.** "Claims about the stone's suspension should be treated as religious tradition rather
+than as an archaeological explanation." "The guidance does not establish that the park has a
+contamination problem."
+
+**Why it is not scored.** The October 2026 revision of WP:AISIGNS calls these the newest hedging
+pattern, nearly absent before mid-2026. They matched none of 90 Wikipedia articles tagged as
+suspected AI text from July 2026 on, and "rather than" alone is more common in human text than
+AI text in every older corpus slopscore has. A rule would be unmeasured.
+
+**How to check.** For each "should be treated as" or "does not establish", ask who suggested the
+stronger reading. If nobody did, cut the sentence or state what the source does say.
+
+## Vague association
+
+**Example.** "He is associated with the city orchestra. He later became associated with music
+education in the region." Four or five such links in one short biography.
+
+**Why it is not scored.** WP:AICONNECT lists it among the most common 2026 signs, but one "is
+associated with" is ordinary English: it appeared in 14 human and 7 AI documents across the
+corpora. The tell is density, and no corpus has enough 2026 text to set a threshold.
+
+**How to check.** Replace each "associated with" with the relation it hides: taught at, founded,
+played in, was CEO of. If you cannot name the relation, the source probably does not support it.
+
+## Synonym cycling
+
+**Example.** The same person is "the protagonist", then "the key player", then "the eponymous
+character" in successive sentences.
+
+**Why it is not scored.** Detecting it needs to know that three phrases name one referent.
+Italian and other school traditions also teach writers to avoid repeating a word, so it is
+common in non-native English.
+
+**How to check.** Pick one name for each person or thing and use it every time.
+
+## Premise stacking
+
+**Example.** The point is stated, restated in other words, and stated a third time before the
+paragraph reaches its claim.
+
+**Why it is not scored.** Repetition of an idea in different words needs a model of meaning.
+slopscore catches only the verbatim form (`REDUNDANT_REPEATED_SENTENCE`) and near-identical
+adjacent sentences (`REDUNDANT_ADJACENT_PAIR`).
+
+**How to check.** Read each paragraph's first two sentences. If the second only restates the
+first, delete one.

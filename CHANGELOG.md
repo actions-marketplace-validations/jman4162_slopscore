@@ -3,6 +3,79 @@
 All notable changes to slopscore. The PyPI distribution is `slopscore-lint`; the import package
 and the tool are named `slopscore`.
 
+## 0.16.0
+
+The October 2026 WP:AISIGNS revision and Graphite's 2026 study. Schema unchanged (0.14.0).
+Fourteen rule changes, no weight or gate changes, and a measured statement that the rules do not
+yet work on 2026 output.
+
+The October 2026 revision of Wikipedia's *Signs of AI writing* lists as the most common new signs
+Markdown, AI edit summaries, disclaimers about source availability, vague "associated with"
+wording, and canned emphasis on media coverage, and it files em dashes, knowledge-cutoff phrases,
+and "In summary" as historical. One example sentence per section run through 0.15.0 got no hit
+for most of the newer patterns.
+
+- **New evaluation slices.** `fetch.py wiki_aicleanup --since 2026-07` keeps only the monthly
+  "suspected AI-generated" subcategories from that month on and writes a separate file, so the
+  undated slice stays reproducible. `scripts/eval/prompts.py` and `prompt_pack.json` build a
+  matched-pair slice without API keys: 16 fact-note prompts written from pre-2022 FineWeb-edu and
+  2023 Wikipedia articles, pasted into chat models by hand, with `prompts.py import` turning the
+  replies into a labelled file. `report.py` reports both when they are cached.
+- **The rules do no better than chance on 2026 Wikipedia text.** On 90 articles tagged from July
+  2026 on, against 90 random current articles, rules AUROC is 0.484 before and after this
+  release. None of this release's new rules fires on that slice. Editors may have cleaned a
+  page after tagging it, and random current articles can contain AI text, so this is weak
+  evidence; it is also the only 2026 evidence slopscore has. `MODEL_CARD.md` and
+  `docs/limitations.md` now say so.
+- **`RESIDUE_TEMPLATE_SLOT`** (low, same id) adds named slots ("[Year]", "[Founder Names]", "[Your
+  Name]", "[Your Email Address]", "[Article Title 1]", "[brief reason]", "[link to the revised
+  article]"), "(Add your channel URL here)", "2025-XX-XX" dates, and SCREAMING citation tokens
+  ("INSERT_SOURCE_URL_30", "PASTE_SPOTIFY_TRACK_URL_HERE", "SOURCE_PUBLISHER"). The names are an
+  explicit list because a generic "[Title Case]" pattern matched Reddit link labels in 19 MAGE
+  human rows.
+- **`RESIDUE_VENDOR_MARKUP`** (high, same id) adds `utm_source=openai`, `utm_source=copilot.com`,
+  `referrer=grok.com`, and `grok-card`. **`RESIDUE_FOOTNOTE_ARROW`** (low) flags the "↩" back-link
+  that survives when rendered chat footnotes are copied as text.
+- **`RESIDUE_LIMITED_INFORMATION`** (same id) adds "aren't widely documented", "limited in the
+  provided search results", "keeps her personal life private", and "My analysis is based on".
+- **`RESIDUE_BELOW_IS`** (medium): "Below is a detailed overview", a ChatGPT opener in Sun et al.
+  (ICML 2025). Clause-initial and an adjective is required, so "Below is a list of the 2019
+  results" stays quiet.
+- **Current-model frames from Graphite** (September 2026; 10,000 human against 90,000
+  matched-length model articles, a tell had to reach twice the human rate), all low until a 2026
+  corpus measures recall: `INSIGHT_MATTERS_BECAUSE` ("This matters because", 357x the human rate
+  in GPT-6 Astra output), `PARALLEL_IS_NOT_SIMPLY` ("the X is not simply", 576x),
+  `PARALLEL_LESS_ABOUT_MORE_ABOUT` now also "less like X and more like Y" (105x),
+  `FORMULAIC_LESSON_FRAME` now also "Together, these" (95x), `FORMULAIC_MODEL_TRANSITION` ("adds
+  another dimension", 117x), `SIGNIF_SINGLE_MOST`, and `CANDOR_IS_GENUINELY` ("is genuinely the
+  hard part"; Opus 5 used "is genuinely" 1,021 times against 4 in the human set).
+  `FORMULAIC_DESPITE_CHALLENGES` now also matches "faces several challenges".
+- **`META_REVISION_DELTA`** (low): "What holds up:", "What was wrong:", and "does not survive
+  contact with the data", the revision scaffolding a June 2026 post described in Claude output.
+  Gated to data nouns so "no plan survives contact with the enemy" stays quiet.
+- **Measured.** Across 1,529 human documents (MAGE, FineWeb-edu, arXiv, Gutenberg, two Wikipedia
+  sets, the benchmark, and both fairness slices) the new rules and new arms match 1 human row,
+  a FineWeb-edu "Together these" (`FORMULAIC_LESSON_FRAME`). The `simple_english`
+  and `non_native` fairness output is unchanged. Benchmark AUROC 0.857 to 0.861; TPR at 1% FPR
+  unchanged at 0.329; long-form unchanged; `docs/thresholds.md` unchanged. Most new rules match
+  no AI row either, because every older corpus predates them, so this release measures their
+  false-positive cost and not their recall.
+- **Declined, with numbers.** A general "Y rather than X" rule: 63 human and 29 AI documents in
+  the older corpora, and the 8 hits in the 2026 slice are ordinary contrasts. Vague association
+  ("is associated with", WP:AICONNECT): 14 human and 7 AI documents, 2 of the 90 tagged 2026
+  articles. Corrective disclaimers ("should be treated as X rather than Y", "does not
+  establish"): no hit in any slice, including the 2026 one. Letter openers ("I hope this message
+  finds you well", "I apologize for any inconvenience"): ordinary business and ESL email, and
+  prompt residue carries the largest weight. Single words from Graphite's lists (deliberate,
+  incredibly, profound, every single): more human than AI documents in our corpora. Sentence
+  length bands and punctuation variety: they also describe simple and non-native English, and
+  the burstiness feature reverted in 0.x raised non-native FPR from 0.00 to 0.17. All of these
+  are now hand checks in `docs/unscored-patterns.md`.
+- **Eval outputs no longer record local paths.** `eval/results.json`, `eval/thresholds.json`,
+  and `eval/lexicon_candidates.yaml` had stored absolute paths including the maintainer's home
+  directory. They now store repo-relative or `~/` paths. A stray coverage database
+  (`.coverage 3`, committed in 0.2) is removed for the same reason.
+
 ## 0.15.0
 
 Document-wide repeats and five rule fixes. Schema unchanged (0.14.0).

@@ -17,9 +17,20 @@ from slopscore.eval.harness import evaluate, should_promote
 CACHE = Path.home() / ".cache" / "slopscore"
 
 
+def _display(path: Path) -> str:
+    """Repo-relative or ~-relative, so the committed results never record a local home path."""
+    root = Path(__file__).resolve().parents[2]
+    for base, prefix in ((root, ""), (Path.home(), "~/")):
+        try:
+            return prefix + str(path.resolve().relative_to(base))
+        except ValueError:
+            continue
+    return path.name
+
+
 def _run(path: Path, name: str, eval_only: bool) -> dict:
     rows = load_jsonl(path)
-    out = {"name": name, "path": str(path), "eval_only": eval_only, "n": len(rows)}
+    out = {"name": name, "path": _display(path), "eval_only": eval_only, "n": len(rows)}
     for kind in ("rules", "ml"):
         out[kind] = evaluate(rows, profile="blog", scorer=kind)
     out["promote_ml"] = should_promote(out["rules"], out["ml"])
@@ -32,9 +43,16 @@ def main() -> None:
     longform = root / "eval" / "datasets" / "longform.jsonl"
     if longform.exists():
         results.append(_run(longform, "longform (300+ words, eval-only)", eval_only=True))
-    wiki = CACHE / "wiki_aicleanup.jsonl"
-    if wiki.exists():
-        results.append(_run(wiki, "wiki_aicleanup (held-out, eval-only)", eval_only=True))
+    # Optional cached slices. The dated Wikipedia slice comes from `fetch.py wiki_aicleanup --since
+    # 2026-07 --full`; the generated one from `prompts.py import`.
+    for name, label in (
+        ("wiki_aicleanup", "wiki_aicleanup (held-out, eval-only)"),
+        ("wiki_aicleanup_since2026-07", "wiki_aicleanup tagged since 2026-07 (eval-only)"),
+        ("generated_2026", "generated 2026 matched pairs (eval-only)"),
+    ):
+        path = CACHE / f"{name}.jsonl"
+        if path.exists():
+            results.append(_run(path, label, eval_only=True))
 
     out = root / "eval" / "results.json"
     out.write_text(json.dumps(results, indent=2) + "\n", encoding="utf-8")

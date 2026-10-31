@@ -168,6 +168,18 @@ _AI_CAT = "Category:Articles containing suspected AI-generated texts"
 
 
 _FULL_ARTICLES = False  # set by --full: whole article text instead of the lead section
+# Set by --since YYYY-MM: only the monthly "from <Month> <Year>" subcategories at or after it.
+# A month is when editors tagged the page, not when the text was written, so it is a ceiling on
+# the text's age only in the sense that newer tags skew toward newer models.
+_SINCE: tuple[int, int] | None = None
+_MONTHS = {
+    m: i
+    for i, m in enumerate(
+        "January February March April May June July August September October November "
+        "December".split(),
+        start=1,
+    )
+}
 
 
 def _wiki_extract(title: str) -> str:
@@ -217,8 +229,32 @@ def _category_members(category: str, cmtype: str, limit: int) -> list[str]:
     return titles[:limit]
 
 
+def _subcat_month(title: str) -> tuple[int, int] | None:
+    """(year, month) from "... from October 2026", or None for an undated subcategory."""
+    words = title.rsplit(" ", 2)
+    if len(words) == 3 and words[1] in _MONTHS and words[2].isdigit():
+        return int(words[2]), _MONTHS[words[1]]
+    return None
+
+
+def _recent_titles(category: str, limit: int, since: tuple[int, int]) -> list[str]:
+    """Pages from the monthly subcategories at or after ``since``, spread evenly, newest first."""
+    dated = [(m, c) for c in _category_members(category, "subcat", 200) if (m := _subcat_month(c))]
+    months = sorted((mc for mc in dated if mc[0] >= since), reverse=True)
+    if not months:
+        raise SystemExit(f"no subcategories of {category} from {since[0]}-{since[1]:02d} on")
+    per_month = -(-limit // len(months))
+    titles: list[str] = []
+    for _, subcat in months:
+        titles += _category_members(subcat, "page", per_month)
+        time.sleep(0.2)
+    return list(dict.fromkeys(titles))[:limit]
+
+
 def _wiki_category_titles(category: str, limit: int) -> list[str]:
     """Pages in the category, recursing one level into its (monthly) subcategories."""
+    if _SINCE is not None:
+        return _recent_titles(category, limit, _SINCE)
     titles = _category_members(category, "page", limit)
     if len(titles) < limit:
         for subcat in _category_members(category, "subcat", 24):
@@ -241,7 +277,14 @@ def fetch_wiki_aicleanup(per_class: int) -> Path:
     """Flagged 'suspected AI-generated' article leads -> slop(1); random articles -> clean(0).
 
     EVAL-ONLY: labels are subjective editor judgments; never train the shipped model on these.
+    With --since the slop rows come from recent monthly tags only, and the file is named for the
+    month (``wiki_aicleanup_since2026-07``) so the undated original stays reproducible.
     """
+    name = "wiki_aicleanup"
+    subgroup = "wiki"
+    if _SINCE is not None:
+        name = f"wiki_aicleanup_since{_SINCE[0]}-{_SINCE[1]:02d}"
+        subgroup = f"wiki_since{_SINCE[0]}-{_SINCE[1]:02d}"
     rows: list[dict] = []
     counts = {0: 0, 1: 0}
     for title in _wiki_category_titles(_AI_CAT, per_class * 3):
@@ -255,7 +298,7 @@ def fetch_wiki_aicleanup(per_class: int) -> Path:
                     "text": text,
                     "label": 1,
                     "bucket": "wild_slop",
-                    "subgroup": "wiki",
+                    "subgroup": subgroup,
                     "title": title,
                     "url": "https://en.wikipedia.org/wiki/" + title.replace(" ", "_"),
                 }
@@ -273,13 +316,13 @@ def fetch_wiki_aicleanup(per_class: int) -> Path:
                         "text": text,
                         "label": 0,
                         "bucket": "wiki_clean",
-                        "subgroup": "wiki",
+                        "subgroup": subgroup,
                         "title": title,
                         "url": "https://en.wikipedia.org/wiki/" + title.replace(" ", "_"),
                     }
                 )
             time.sleep(0.15)
-    return _write("wiki_aicleanup", rows, counts)
+    return _write(name, rows, counts)
 
 
 def fetch_mage(per_class: int) -> Path:
@@ -475,9 +518,17 @@ def main(argv: list[str]) -> None:
     parser.add_argument(
         "--full", action="store_true", help="Wikipedia: whole articles instead of lead sections."
     )
+    parser.add_argument(
+        "--since",
+        metavar="YYYY-MM",
+        help="wiki_aicleanup: only pages tagged in this month or later (separate output file).",
+    )
     args = parser.parse_args(argv)
-    global _FULL_ARTICLES
+    global _FULL_ARTICLES, _SINCE
     _FULL_ARTICLES = args.full
+    if args.since:
+        year, month = args.since.split("-")
+        _SINCE = (int(year), int(month))
     for name in args.names or ["wiki_aicleanup"]:
         if name not in SOURCES:
             raise SystemExit(f"unknown source '{name}'; choose from {sorted(SOURCES)}")

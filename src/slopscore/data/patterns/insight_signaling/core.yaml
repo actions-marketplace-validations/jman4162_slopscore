@@ -150,3 +150,16 @@ rules:
     pattern: "\\b(?:(?<=\\b(?:must|should|has to|have to|needs? to|ought to)\\s)earn its (?:place|spot|seat)\\b|(?<=\\b(?:make|makes|making|let|lets|letting|force|forces|forcing)\\s(?!(?:them|him|her|us|me|you|players|kids|people|everyone|everybody)\\b)(?:[\\w'-]+\\s){1,3})earn (?:its|their) (?:place|spot|seat)\\b|earns? (?:its|their) (?:place|spot|seat)(?=\\s+(?:by|through|when|only|if|because)\\b)|earns its (?:place|spot|seat)(?=\\s*(?:[.,;:!?)]|$))|(?:earns?|(?<=\\b(?:has|have)\\s)earned) (?:a|its|their) (?:place|spot|seat) in (?:[\\w'-]+\\s){0,3}?(?:portfolio|toolkit|tool kit|workflow|stack|pipeline|codebase|routine|allocation)s?\\b)"
     explanation: "'earns its place' — gatekeeping metaphor; state the criterion it meets."
     source: "human-reader catch, liberal-techno-optimism essay (2026-10)"
+
+  # v0.16 (Graphite "AI Tells", September 2026, 10k human vs 90k model articles): an importance
+  # flag announces that a point matters and then gives the reason. "matters because" ran 357x
+  # the human rate in GPT-6 Astra output and 132x in Opus 5; "matters more than" 93x. Zero hits
+  # in 1,529 human corpus documents, both fairness slices included. The subject is a pronoun or a
+  # meta noun, so "Health matters more than wealth" stays quiet; "the distinction matters" is
+  # left to META_PROSE_ATTRIBUTE_SUBJECT so one span is never charged twice. Low until a 2026
+  # corpus measures recall.
+  - rule_id: INSIGHT_MATTERS_BECAUSE
+    severity: low
+    pattern: "\\b(?:this|that|it|which|(?:the|this|that) (?:difference|nuance|detail|choice|order|timing|wording))\\s+(?:still |really |also )?matters\\s+(?:because|more than|here\\b)"
+    explanation: "'This matters because' — announces importance; state the reason as the point."
+    source: "Graphite AI Tells (2026-09)"
