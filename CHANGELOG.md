@@ -3,6 +3,69 @@
 All notable changes to slopscore. The PyPI distribution is `slopscore-lint`; the import package
 and the tool are named `slopscore`.
 
+## 0.15.0
+
+Document-wide repeats and five rule fixes. Schema unchanged (0.14.0).
+
+A reader ran 0.13.0 on a 5,000-word internal design document. It scored 7.9 "low", and a human
+reader still found it inflated and repetitive. Their notes listed thirteen gaps. This release
+fixes the two false positives they found, adds the four rules that can be written without
+flagging good prose, and documents the rest as checks to do by hand.
+
+- **`RESIDUE_KNOWLEDGE_CUTOFF` false positive.** The pattern made "my" optional and accepted a
+  bare "is", so "Historical training data is sparse for this sensor type" was charged as a
+  high-severity assistant disclaimer. That sentence alone scored 85.4; only abstention kept the
+  label at "mild". The rule now needs "my" and a date-limit phrase ("my training data only goes
+  up to", "my knowledge cutoff"). "The model's knowledge cutoff is April 2024" no longer fires.
+  Same rule id.
+- **`REDUNDANT_ADJACENT_PAIR` on link lines.** The Markdown ingester appends a link's URL to its
+  text, so two adjacent link lines with different labels matched on their shared host and path.
+  URLs are now removed before comparing, and a line left with fewer than three content words is
+  never redundant.
+- **`REDUNDANT_REPEATED_SENTENCE`** (low, finding): a sentence of 15 or more words that repeats
+  an earlier, non-adjacent one, verbatim or with a word or two changed. Adjacent comparison could
+  not see a sentence copied from the summary into the last section. Candidates share a word
+  5-shingle; a candidate counts at 0.85 token alignment. Headings, list items, and quoted text
+  are skipped. The finding anchors on the later copy only, and the explanation quotes the
+  opening of the earlier one. The redundancy score is now the larger of the adjacent-pair
+  fraction and a repeat term that reaches 1.0 at four repeats.
+- **Redundancy follows filter-then-score.** `Redundancy` implements `score_spans` and
+  `rule_ids`, so both REDUNDANT_* ids are valid suppression names, and disabling a redundancy
+  rule now removes its points as well as its evidence. Before, disabling
+  `REDUNDANT_ADJACENT_PAIR` hid the summary span and left the score unchanged.
+- **`RESIDUE_TEMPLATE_SLOT`** (low): unfilled template slots such as "[X date]", "[$X]",
+  "[N hosts]", "[XX%]", and "[Company Name]". It is low because prompt_residue carries the
+  largest weight: at medium, two slots appended to 40 clean long-form human documents moved the
+  median score from 7.6 to 21.5 and put 3 above 50. At low the median is 12.2 and none passes
+  50. A lowercase or lone "[x]" task box, "[X-ray]", "[1]", and "Louis [X]" do not match. TODO
+  and TBD markers are deliberately not flagged: people leave them in their own drafts.
+- **`PARALLEL_NOT_MERELY_BUT`** now matches "not simply X, but Y", with an 80-character window
+  (was 60). The reader guessed a typo in their document hid the hit; the rule only knew
+  "merely". "not just X, but Y" was tried and dropped: it matched 6 human rows and 2 AI rows
+  across MAGE, FineWeb-edu, and the benchmark.
+- **`FORMULAIC_LESSON_FRAME`** (low): "the larger lesson is", "this case illustrates how", and
+  clause-initial "Taken together,". "This example illustrates the use of a for loop" and "the key
+  lesson from the outage" stay quiet.
+- **Measured.** Long-form AUROC 0.7033 to 0.7081 and PR-AUC 0.5913 to 0.5986; TPR at 1% FPR is
+  unchanged at 0.1333. wiki_aicleanup AUROC 0.7461 to 0.7516, TPR at 5% FPR 0.322 to 0.344. The
+  benchmark and the `simple_english` and `non_native` fairness slices are unchanged. Across the
+  cached corpora and the long-form set (which shares rows with two of them) the repeat rule
+  fired in 22 AI-labelled and 7 human documents; the largest
+  human change was 10.3 to 15.6, and every one stays "low". The cutoff, template-slot, and
+  lesson-frame rules fire on no corpus row, so their benefit is not measured here. In
+  `docs/thresholds.md` the clean P99 rises by 0.2 to 0.9 points per profile; the recommended
+  cutoff and its FPR are unchanged.
+- **Declined, with reasons.** A business-memo profile (profiles only reweight what the rules
+  find, and this document had almost no findings), readability formulas (they measure sentence
+  and syllable length, and penalize technical vocabulary), term-frequency outliers (topic words
+  recur by nature; `calibrate` covers per-author drift), section-overlap thesis detection (a
+  key term in every section is term consistency), and checks that a headline figure is derived
+  (needs semantics).
+- **Docs.** `docs/unscored-patterns.md` lists ten document-level patterns slopscore does not
+  score, why, and how to check each by hand. `docs/limitations.md` says a low score does not
+  mean a document is ready. `docs/configuration.md` has a table of every profile multiplier,
+  checked against `scoring/profiles.py` by `tests/test_profile_docs.py`.
+
 ## 0.14.3
 
 The "earns its place" metaphor. Schema unchanged (0.14.0); two rule additions, no weight or

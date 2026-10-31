@@ -47,10 +47,16 @@ rules:
     source: "WP:AIPARALLEL"
 
   # v0.7 antithesis variants — antithesis is the single most recognizable AI tell.
+  # v0.15: "not simply X, but Y" is the same antithesis and matched nothing ("Our objective is
+  # not simply to build a tool, but to change how we ship"). The window grew from 60 to 80
+  # characters because the infinitive form carries a longer X. "not just X but Y" was tried and
+  # dropped: across MAGE, FineWeb-edu, and the benchmark it matched 6 human rows and 2 AI rows
+  # ("not just the food, but", "Not just subwoofers, but"). PARALLEL_NOT_JUST keeps the
+  # "is not just X, it's Y" form.
   - rule_id: PARALLEL_NOT_MERELY_BUT
     severity: medium
-    pattern: "\\bnot merely\\b[^.?!]{1,60}?\\bbut\\b"
-    explanation: "'not merely X, but Y' antithesis (a 'not just' variant)."
+    pattern: "\\bnot (?:merely|simply)\\b[^.?!]{1,80}?\\bbut\\b"
+    explanation: "'not merely X, but Y' / 'not simply X, but Y' antithesis."
     source: "WP:AIPARALLEL"
 
   - rule_id: PARALLEL_LESS_ABOUT_MORE_ABOUT

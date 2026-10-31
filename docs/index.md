@@ -34,3 +34,8 @@ slopscore-lint scan post.md --broad                           # opt-in broad tie
 - [Configuration](configuration.md): `slopscore.toml` / `[tool.slopscore]`, per-rule toggles.
 - [Suppression](suppression.md): inline `<!-- slopscore-disable … -->` comments.
 - [Baseline](baseline.md): adopt on an existing repo; fail CI only on new findings.
+
+## What it does not check
+
+- [Patterns slopscore does not score](unscored-patterns.md): document-level problems to check
+  by hand, such as a thesis restated in every section or a headline figure that is never derived.

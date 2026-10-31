@@ -101,12 +101,12 @@
       "metrics": {
         "n": 180,
         "n_positive": 60,
-        "auroc": 0.7033,
-        "pr_auc": 0.5913,
+        "auroc": 0.7081,
+        "pr_auc": 0.5986,
         "tpr_at_1fpr": 0.1333,
         "tpr_at_5fpr": 0.2333,
-        "ece": 0.2509,
-        "brier": 0.2778
+        "ece": 0.2507,
+        "brier": 0.2775
       },
       "selective": {
         "coverage": 1.0,
@@ -192,12 +192,12 @@
       "metrics": {
         "n": 180,
         "n_positive": 90,
-        "auroc": 0.7461,
-        "pr_auc": 0.7697,
+        "auroc": 0.7516,
+        "pr_auc": 0.7759,
         "tpr_at_1fpr": 0.1111,
-        "tpr_at_5fpr": 0.3222,
-        "ece": 0.4151,
-        "brier": 0.4138
+        "tpr_at_5fpr": 0.3444,
+        "ece": 0.415,
+        "brier": 0.4136
       },
       "selective": {
         "coverage": 0.9,

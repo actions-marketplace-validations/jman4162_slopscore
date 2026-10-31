@@ -40,11 +40,39 @@ explicit file.
 
 Every JSON report carries a `breakdown`: one row per dimension with its value, weight, profile
 multiplier, corroboration gate, and the logit it contributed, plus a `statistical` flag on the
-four span-less dimensions (genericity, cadence, redundancy, human signals) and their summed
+four statistical dimensions (genericity, cadence, redundancy, human signals) and their summed
 `statistical_logit`. Those four dimensions also emit low-severity `summary` evidence
 (`GENERIC_SENTENCE`, `CADENCE_UNIFORM_RUN`, `REDUNDANT_ADJACENT_PAIR`) pointing at the passage
 that drove them. Summaries explain the score; they are not rule hits, so they never trip
-`--fail-on`, never enter SARIF, and never count as new findings against a baseline.
+`--fail-on`, never enter SARIF, and never count as new findings against a baseline. One
+redundancy rule is an ordinary finding: `REDUNDANT_REPEATED_SENTENCE` marks a sentence of 15 or
+more words that repeats an earlier, non-adjacent one, verbatim or with a word or two changed.
+
+## What each profile changes
+
+A profile multiplies dimension weights; 1.0 (a blank cell) leaves a weight unchanged. Profiles
+cannot find anything the rules miss. A document with few findings scores about the same under
+every profile.
+
+| dimension | blog | essay | academic | marketing | technical | social |
+|---|---:|---:|---:|---:|---:|---:|
+| formulaic_structure | 1.2 | | 0.9 | | | |
+| genericity | 1.2 | 1.1 | | 0.8 | | |
+| significance_inflation | 1.2 | | | 0.8 | | |
+| insight_signaling | 1.15 | 1.2 | 0.6 | 0.9 | 0.6 | 1.15 |
+| performative_candor | 1.1 | 1.1 | | 1.2 | 0.8 | 0.6 |
+| unsupported_claims | 1.1 | | | | | |
+| cadence_sameness | 0.8 | | | | 0.7 | |
+| metadiscourse | 1.15 | 1.1 | 0.5 | 0.8 | 0.5 | 0.9 |
+| redundancy | | 1.2 | | | | |
+| parallelism | | 1.1 | | | 0.8 | |
+| structure_tells | | | 0.8 | 1.1 | 0.7 | 0.8 |
+| lexical_markers | | | 0.8 | 0.7 | 0.7 | |
+| copula_avoidance | | | 0.7 | 0.6 | 0.5 | |
+| weasel_attribution | | | 0.8 | | | |
+| formatting_tells | | | | 0.7 | | 0.6 |
+
+The table is checked against `scoring/profiles.py` by `tests/test_profile_docs.py`.
 
 `--broad` enables an opt-in tier of higher-false-positive rules (rationalist/essayist jargon in
 `insight_signaling`; bare quantifiers, hedges, and intensifiers in `weasel_attribution`; bare

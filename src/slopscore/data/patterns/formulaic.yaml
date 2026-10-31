@@ -55,6 +55,15 @@ rules:
     pattern: "\\bin conclusion\\b|(?:^|(?<=[.!?]\\s))(?:to sum up|all in all|in summary|in a nutshell|at the end of the day),"
     explanation: "'In conclusion' / 'to sum up' formulaic closer."
 
+  # v0.15: the wrap-up that closes a section by naming its lesson instead of ending on the last
+  # fact. "This example illustrates" is gated to a lesson object (how/why/that/the importance) so
+  # a textbook "This example illustrates the use of a for loop" stays quiet. "key lesson" is left
+  # out: a post-mortem that lists its lessons is using the word literally.
+  - rule_id: FORMULAIC_LESSON_FRAME
+    severity: low
+    pattern: "\\bthe (?:larger|broader|bigger|real|deeper) (?:lesson|takeaway) (?:here )?(?:is|was)\\b|\\bthis (?:case|example|episode|story|experience) (?:illustrates|underscores|highlights) (?:how|why|that|the (?:importance|need|value|power|broader|larger))\\b|{CLAUSE_START}taken together,"
+    explanation: "'The larger lesson is' / 'This case illustrates how' section wrap-up."
+
   - rule_id: FORMULAIC_GAME_CHANGER
     severity: medium
     pattern: "\\b(?:game[- ]changer|game[- ]changing)\\b"
