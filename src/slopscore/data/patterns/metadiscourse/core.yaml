@@ -113,3 +113,13 @@ rules:
     pattern: "{CLAUSE_START}(?:to be clear|to be precise|let me be precise|to put a finer point on it|for the avoidance of doubt),"
     explanation: "'To be clear,' — announces clarity rather than supplying it."
     source: "AI-tell (2024-2026)"
+
+  # v0.16: revision-delta scaffolding (slhck, "Claudish", 2026-06): a revised report that labels
+  # its own corrections ("What holds up:", "What was wrong:") instead of stating the corrected
+  # result. "does not survive contact with" is gated to data nouns so Moltke's "no plan survives
+  # contact with the enemy" stays quiet. Single blog source, so low.
+  - rule_id: META_REVISION_DELTA
+    severity: low
+    pattern: "{CLAUSE_START}(?:\\*\\*)?what (?:holds up|still holds|was wrong|i got wrong|we got wrong)(?:\\*\\*)?\\s*:|\\bdoes(?:n't| not) survive contact with (?:the )?(?:source |raw |actual |underlying )?(?:data|evidence|numbers|sources?|logs)\\b"
+    explanation: "'What holds up: / What was wrong:' — revision scaffolding about the text, not the subject."
+    source: "slhck Claudish (2026-06)"

@@ -3,6 +3,142 @@
 All notable changes to slopscore. The PyPI distribution is `slopscore-lint`; the import package
 and the tool are named `slopscore`.
 
+## 0.16.0
+
+The October 2026 WP:AISIGNS revision and Graphite's 2026 study. Schema unchanged (0.14.0).
+Fourteen rule changes, no weight or gate changes, and a measured statement that the rules do not
+yet work on 2026 output.
+
+The October 2026 revision of Wikipedia's *Signs of AI writing* lists as the most common new signs
+Markdown, AI edit summaries, disclaimers about source availability, vague "associated with"
+wording, and canned emphasis on media coverage, and it files em dashes, knowledge-cutoff phrases,
+and "In summary" as historical. One example sentence per section run through 0.15.0 got no hit
+for most of the newer patterns.
+
+- **New evaluation slices.** `fetch.py wiki_aicleanup --since 2026-07` keeps only the monthly
+  "suspected AI-generated" subcategories from that month on and writes a separate file, so the
+  undated slice stays reproducible. `scripts/eval/prompts.py` and `prompt_pack.json` build a
+  matched-pair slice without API keys: 16 fact-note prompts written from pre-2022 FineWeb-edu and
+  2023 Wikipedia articles, pasted into chat models by hand, with `prompts.py import` turning the
+  replies into a labelled file. `report.py` reports both when they are cached.
+- **The rules do no better than chance on 2026 Wikipedia text.** On 90 articles tagged from July
+  2026 on, against 90 random current articles, rules AUROC is 0.484 before and after this
+  release. None of this release's new rules fires on that slice. Editors may have cleaned a
+  page after tagging it, and random current articles can contain AI text, so this is weak
+  evidence; it is also the only 2026 evidence slopscore has. `MODEL_CARD.md` and
+  `docs/limitations.md` now say so.
+- **`RESIDUE_TEMPLATE_SLOT`** (low, same id) adds named slots ("[Year]", "[Founder Names]", "[Your
+  Name]", "[Your Email Address]", "[Article Title 1]", "[brief reason]", "[link to the revised
+  article]"), "(Add your channel URL here)", "2025-XX-XX" dates, and SCREAMING citation tokens
+  ("INSERT_SOURCE_URL_30", "PASTE_SPOTIFY_TRACK_URL_HERE", "SOURCE_PUBLISHER"). The names are an
+  explicit list because a generic "[Title Case]" pattern matched Reddit link labels in 19 MAGE
+  human rows.
+- **`RESIDUE_VENDOR_MARKUP`** (high, same id) adds `utm_source=openai`, `utm_source=copilot.com`,
+  `referrer=grok.com`, and `grok-card`. **`RESIDUE_FOOTNOTE_ARROW`** (low) flags the "↩" back-link
+  that survives when rendered chat footnotes are copied as text.
+- **`RESIDUE_LIMITED_INFORMATION`** (same id) adds "aren't widely documented", "limited in the
+  provided search results", "keeps her personal life private", and "My analysis is based on".
+- **`RESIDUE_BELOW_IS`** (medium): "Below is a detailed overview", a ChatGPT opener in Sun et al.
+  (ICML 2025). Clause-initial and an adjective is required, so "Below is a list of the 2019
+  results" stays quiet.
+- **Current-model frames from Graphite** (September 2026; 10,000 human against 90,000
+  matched-length model articles, a tell had to reach twice the human rate), all low until a 2026
+  corpus measures recall: `INSIGHT_MATTERS_BECAUSE` ("This matters because", 357x the human rate
+  in GPT-6 Astra output), `PARALLEL_IS_NOT_SIMPLY` ("the X is not simply", 576x),
+  `PARALLEL_LESS_ABOUT_MORE_ABOUT` now also "less like X and more like Y" (105x),
+  `FORMULAIC_LESSON_FRAME` now also "Together, these" (95x), `FORMULAIC_MODEL_TRANSITION` ("adds
+  another dimension", 117x), `SIGNIF_SINGLE_MOST`, and `CANDOR_IS_GENUINELY` ("is genuinely the
+  hard part"; Opus 5 used "is genuinely" 1,021 times against 4 in the human set).
+  `FORMULAIC_DESPITE_CHALLENGES` now also matches "faces several challenges".
+- **`META_REVISION_DELTA`** (low): "What holds up:", "What was wrong:", and "does not survive
+  contact with the data", the revision scaffolding a June 2026 post described in Claude output.
+  Gated to data nouns so "no plan survives contact with the enemy" stays quiet.
+- **Measured.** Across 1,529 human documents (MAGE, FineWeb-edu, arXiv, Gutenberg, two Wikipedia
+  sets, the benchmark, and both fairness slices) the new rules and new arms match 1 human row,
+  a FineWeb-edu "Together these" (`FORMULAIC_LESSON_FRAME`). The `simple_english`
+  and `non_native` fairness output is unchanged. Benchmark AUROC 0.857 to 0.861; TPR at 1% FPR
+  unchanged at 0.329; long-form unchanged; `docs/thresholds.md` unchanged. Most new rules match
+  no AI row either, because every older corpus predates them, so this release measures their
+  false-positive cost and not their recall.
+- **Declined, with numbers.** A general "Y rather than X" rule: 63 human and 29 AI documents in
+  the older corpora, and the 8 hits in the 2026 slice are ordinary contrasts. Vague association
+  ("is associated with", WP:AICONNECT): 14 human and 7 AI documents, 2 of the 90 tagged 2026
+  articles. Corrective disclaimers ("should be treated as X rather than Y", "does not
+  establish"): no hit in any slice, including the 2026 one. Letter openers ("I hope this message
+  finds you well", "I apologize for any inconvenience"): ordinary business and ESL email, and
+  prompt residue carries the largest weight. Single words from Graphite's lists (deliberate,
+  incredibly, profound, every single): more human than AI documents in our corpora. Sentence
+  length bands and punctuation variety: they also describe simple and non-native English, and
+  the burstiness feature reverted in 0.x raised non-native FPR from 0.00 to 0.17. All of these
+  are now hand checks in `docs/unscored-patterns.md`.
+- **Eval outputs no longer record local paths.** `eval/results.json`, `eval/thresholds.json`,
+  and `eval/lexicon_candidates.yaml` had stored absolute paths including the maintainer's home
+  directory. They now store repo-relative or `~/` paths. A stray coverage database
+  (`.coverage 3`, committed in 0.2) is removed for the same reason.
+
+## 0.15.0
+
+Document-wide repeats and five rule fixes. Schema unchanged (0.14.0).
+
+A reader ran 0.13.0 on a 5,000-word internal design document. It scored 7.9 "low", and a human
+reader still found it inflated and repetitive. Their notes listed thirteen gaps. This release
+fixes the two false positives they found, adds the four rules that can be written without
+flagging good prose, and documents the rest as checks to do by hand.
+
+- **`RESIDUE_KNOWLEDGE_CUTOFF` false positive.** The pattern made "my" optional and accepted a
+  bare "is", so "Historical training data is sparse for this sensor type" was charged as a
+  high-severity assistant disclaimer. That sentence alone scored 85.4; only abstention kept the
+  label at "mild". The rule now needs "my" and a date-limit phrase ("my training data only goes
+  up to", "my knowledge cutoff"). "The model's knowledge cutoff is April 2024" no longer fires.
+  Same rule id.
+- **`REDUNDANT_ADJACENT_PAIR` on link lines.** The Markdown ingester appends a link's URL to its
+  text, so two adjacent link lines with different labels matched on their shared host and path.
+  URLs are now removed before comparing, and a line left with fewer than three content words is
+  never redundant.
+- **`REDUNDANT_REPEATED_SENTENCE`** (low, finding): a sentence of 15 or more words that repeats
+  an earlier, non-adjacent one, verbatim or with a word or two changed. Adjacent comparison could
+  not see a sentence copied from the summary into the last section. Candidates share a word
+  5-shingle; a candidate counts at 0.85 token alignment. Headings, list items, and quoted text
+  are skipped. The finding anchors on the later copy only, and the explanation quotes the
+  opening of the earlier one. The redundancy score is now the larger of the adjacent-pair
+  fraction and a repeat term that reaches 1.0 at four repeats.
+- **Redundancy follows filter-then-score.** `Redundancy` implements `score_spans` and
+  `rule_ids`, so both REDUNDANT_* ids are valid suppression names, and disabling a redundancy
+  rule now removes its points as well as its evidence. Before, disabling
+  `REDUNDANT_ADJACENT_PAIR` hid the summary span and left the score unchanged.
+- **`RESIDUE_TEMPLATE_SLOT`** (low): unfilled template slots such as "[X date]", "[$X]",
+  "[N hosts]", "[XX%]", and "[Company Name]". It is low because prompt_residue carries the
+  largest weight: at medium, two slots appended to 40 clean long-form human documents moved the
+  median score from 7.6 to 21.5 and put 3 above 50. At low the median is 12.2 and none passes
+  50. A lowercase or lone "[x]" task box, "[X-ray]", "[1]", and "Louis [X]" do not match. TODO
+  and TBD markers are deliberately not flagged: people leave them in their own drafts.
+- **`PARALLEL_NOT_MERELY_BUT`** now matches "not simply X, but Y", with an 80-character window
+  (was 60). The reader guessed a typo in their document hid the hit; the rule only knew
+  "merely". "not just X, but Y" was tried and dropped: it matched 6 human rows and 2 AI rows
+  across MAGE, FineWeb-edu, and the benchmark.
+- **`FORMULAIC_LESSON_FRAME`** (low): "the larger lesson is", "this case illustrates how", and
+  clause-initial "Taken together,". "This example illustrates the use of a for loop" and "the key
+  lesson from the outage" stay quiet.
+- **Measured.** Long-form AUROC 0.7033 to 0.7081 and PR-AUC 0.5913 to 0.5986; TPR at 1% FPR is
+  unchanged at 0.1333. wiki_aicleanup AUROC 0.7461 to 0.7516, TPR at 5% FPR 0.322 to 0.344. The
+  benchmark and the `simple_english` and `non_native` fairness slices are unchanged. Across the
+  cached corpora and the long-form set (which shares rows with two of them) the repeat rule
+  fired in 22 AI-labelled and 7 human documents; the largest
+  human change was 10.3 to 15.6, and every one stays "low". The cutoff, template-slot, and
+  lesson-frame rules fire on no corpus row, so their benefit is not measured here. In
+  `docs/thresholds.md` the clean P99 rises by 0.2 to 0.9 points per profile; the recommended
+  cutoff and its FPR are unchanged.
+- **Declined, with reasons.** A business-memo profile (profiles only reweight what the rules
+  find, and this document had almost no findings), readability formulas (they measure sentence
+  and syllable length, and penalize technical vocabulary), term-frequency outliers (topic words
+  recur by nature; `calibrate` covers per-author drift), section-overlap thesis detection (a
+  key term in every section is term consistency), and checks that a headline figure is derived
+  (needs semantics).
+- **Docs.** `docs/unscored-patterns.md` lists ten document-level patterns slopscore does not
+  score, why, and how to check each by hand. `docs/limitations.md` says a low score does not
+  mean a document is ready. `docs/configuration.md` has a table of every profile multiplier,
+  checked against `scoring/profiles.py` by `tests/test_profile_docs.py`.
+
 ## 0.14.3
 
 The "earns its place" metaphor. Schema unchanged (0.14.0); two rule additions, no weight or

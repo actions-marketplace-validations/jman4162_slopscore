@@ -30,6 +30,7 @@ nav:
   - Benchmark & results: benchmark.md
   - Thresholds: thresholds.md
   - Limitations & authorship: limitations.md
+  - Patterns it does not score: unscored-patterns.md
   - Model card: https://github.com/jman4162/slopscore/blob/main/MODEL_CARD.md
 
 markdown_extensions:

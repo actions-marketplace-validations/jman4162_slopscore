@@ -37,6 +37,29 @@ rules:
     pattern: "\\[(?:insert[^\\]]*|placeholder|your \\w+ here|citation needed)\\]"
     explanation: "Unfilled placeholder left in the text."
 
+  # v0.15: template slots a model emits for the writer to fill ("[X date]", "[$X]", "[N hosts]",
+  # "[Company Name]"). Low, not high like RESIDUE_PLACEHOLDER: a human template leaves these too,
+  # and prompt_residue carries the largest weight. At medium, two slots appended to 40 clean
+  # long-form human documents moved the median score from 7.6 to 21.5 and put 3 above 50; at low
+  # the median is 12.2 and none passes 50. The X and N slots are case-sensitive (rules compile
+  # IGNORECASE) so a lowercase "[x]" task-list box stays quiet, a lone "[X]" is not matched
+  # because GFM writes checked boxes that way, and the X slot needs a space after it so "[X-ray]"
+  # is not a slot. TODO and TBD markers are deliberately out of scope: people leave them in their
+  # own drafts.
+  #
+  # v0.16 (WP:AIPLACEHOLDER, October 2026 revision): named slots ("[Year]", "[Founder Names]",
+  # "[Your Email Address]", "[Article Title 1]", "[brief reason]", "[link to the revised
+  # article]"), "(Add your channel URL here)", placeholder dates ("2025-XX-XX"), and the
+  # SCREAMING tokens models put in citation fields ("INSERT_SOURCE_URL_30",
+  # "PASTE_SPOTIFY_TRACK_URL_HERE", "SOURCE_PUBLISHER"). The slot names are an explicit list: a
+  # generic "[Title Case]" pattern matched Reddit link labels in 19 MAGE human rows ("[message
+  # us]", "[popular topics wiki]"). The SCREAMING tokens must name a URL, source, link, or HERE so
+  # a code comment that mentions a constant such as INSERT_USER stays quiet.
+  - rule_id: RESIDUE_TEMPLATE_SLOT
+    severity: low
+    pattern: "\\[(?:\\$\\s?(?-i:X{1,3}|N)(?:[ -]?[a-z%]+)?|(?-i:X{2,3})|(?-i:X{1,3}|N)%|(?-i:X{1,3}|N) [a-z]+(?: [a-z]+)?|(?:company|client|product|team|customer|project|author) name|your (?:name|signature|title)|(?:your |insert )?(?:year|founding year|founder names?|full name|email(?: address)?|phone number|job title|article title(?: \\d+)?|join date|first edit date|brief reason|award(?: or recognition)? title|entertainer's name|social media profiles?)|link to (?:the |your )?[a-z ]{1,30})\\]|\\((?:add|insert|paste) (?:your|the) [^)\\n]{1,40} here\\)|\\b(?:19|20)\\d\\d-(?-i:XX|xx)-(?-i:XX|xx)\\b|\\b(?-i:(?:INSERT|PASTE)_[A-Z0-9_]*(?:URL|SOURCE|LINK|HERE)[A-Z0-9_]*|SOURCE_PUBLISHER)\\b"
+    explanation: "Unfilled template slot ('[X date]', '[Year]', '2025-XX-XX', 'INSERT_SOURCE_URL') left in the text."
+
   # Low: Markdown ingest strips fenced code, so this only fires on Markdown pasted through the
   # plain-text path, or on a lone backtick run inside a sentence about code fences.
   - rule_id: RESIDUE_CODE_FENCE
@@ -55,17 +78,43 @@ rules:
     pattern: "\\b(?:would you like me to|is there anything else|(?:do )?let me know if you(?:'d| would) like|here(?:'s| is) a (?:more )?detailed breakdown|hope (?:that|this) helps|feel free to (?:ask|reach out))\\b"
     explanation: "Chatbot offer of further help left in the text."
 
+  # v0.16: the contraction ("aren't widely documented") and the 2024-25 retrieval forms ("limited
+  # in the provided search results", "keeps her personal life private", "My analysis is based
+  # on"), WP:AIDISCLAIMER. "Not widely available" is left out: it describes products and drugs.
+  # "Maintains a low profile" is left out too: it is ordinary journalism about a reclusive person.
+  # The rule matches no row in any cached corpus (1,529 human, 950 AI documents), so this release
+  # measures its false-positive cost (none) and not its recall.
   - rule_id: RESIDUE_LIMITED_INFORMATION
     severity: medium
-    pattern: "\\b(?:while specific details are (?:limited|scarce|not (?:widely )?available)|based on (?:the )?available information|(?:is|are) not widely documented|as of my last update|as of (?:my|the) (?:latest|last) (?:training|knowledge)|I (?:don't|do not) have (?:access to )?real[- ]time)\\b"
+    pattern: "\\b(?:while specific details are (?:limited|scarce|not (?:widely )?available)|based on (?:the )?available information|(?:is|are|was|were)(?: not|n't) (?:widely|extensively|well|publicly|readily) (?:documented|transcribed|reported|disclosed)|(?:limited|scarce|not available) in the (?:provided|available) (?:search results|sources|materials)|in the provided search results|keeps? (?:his|her|their) personal (?:life|details) private|my analysis is based on|as of my last update|as of (?:my|the) (?:latest|last) (?:training|knowledge)|I (?:don't|do not) have (?:access to )?real[- ]time)\\b"
     explanation: "Knowledge-gap disclaimer typical of a chatbot reply."
 
+  # v0.16: utm_source=openai replaced utm_source=chatgpt.com in ChatGPT links around August 2025;
+  # Copilot and Grok add their own tracking parameters (WP:AISIGNS, October 2026).
   - rule_id: RESIDUE_VENDOR_MARKUP
     severity: high
-    pattern: "(?:contentReference|oaicite|oai_citation|turn\\d+search\\d+|turn\\d+file\\d+|attributableIndex|\\[cite: ?\\d|\\[span_\\d+\\]\\(start_span\\)|grok_card|grok_render_citation|ppl-ai-file-upload|attached_file|:::writing|utm_source=chatgpt)"
-    explanation: "Assistant citation/markup artifact (ChatGPT, Gemini, Grok, Perplexity)."
+    pattern: "(?:contentReference|oaicite|oai_citation|turn\\d+search\\d+|turn\\d+file\\d+|attributableIndex|\\[cite: ?\\d|\\[span_\\d+\\]\\(start_span\\)|grok_card|grok_render_citation|ppl-ai-file-upload|attached_file|:::writing|utm_source=chatgpt|utm_source=openai|utm_source=copilot\\.com|referrer=grok\\.com|grok-card)"
+    explanation: "Assistant citation/markup artifact (ChatGPT, Copilot, Gemini, Grok, Perplexity)."
 
+  # v0.16: footnote back-links ("KLAS Research (2024) ↩ ↩2") survive when a chat reply's rendered
+  # footnotes are copied as text. Low: any Markdown-to-HTML footnote export renders the same arrow.
+  - rule_id: RESIDUE_FOOTNOTE_ARROW
+    severity: low
+    pattern: "↩"
+    explanation: "Footnote back-link arrow copied from rendered chat output."
+
+  # v0.16: Sun et al. (ICML 2025) name "Below is" as a ChatGPT opener. Clause-initial, and an
+  # adjective is required, because "Below is a list of the 2019 results" is ordinary web prose.
+  - rule_id: RESIDUE_BELOW_IS
+    severity: medium
+    pattern: "{CLAUSE_START}(?:below is|here(?:'s| is)) (?:a|an) (?:detailed|comprehensive|structured|complete|clear|concise) (?:overview|breakdown|summary|guide|explanation|analysis|draft)\\b"
+    explanation: "Chatbot reply opener announcing its own overview."
+
+  # v0.15: "my" is required, and "training data" must be followed by a date-limit phrase. The
+  # earlier pattern made "my" optional and allowed a bare "is", so ML prose such as "historical
+  # training data is sparse" scored as a high-severity assistant disclaimer. Third-person "the
+  # model's knowledge cutoff is April 2024" is a statement about a model, not residue.
   - rule_id: RESIDUE_KNOWLEDGE_CUTOFF
     severity: high
-    pattern: "\\b(?:my )?(?:knowledge|training) (?:cut[- ]?off|data) (?:is|extends|goes up to)\\b"
+    pattern: "\\bmy (?:knowledge|training(?: data)?) (?:cut[- ]?off|(?:only )?(?:goes|extends|runs) (?:up to|through|until|to)|(?:is|was) (?:only )?(?:current|up to date) (?:as of|through|until|up to)|ends (?:in|at|around))\\b"
     explanation: "Assistant knowledge-cutoff disclaimer."

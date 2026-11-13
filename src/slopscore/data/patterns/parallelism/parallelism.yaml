@@ -47,15 +47,31 @@ rules:
     source: "WP:AIPARALLEL"
 
   # v0.7 antithesis variants — antithesis is the single most recognizable AI tell.
+  # v0.15: "not simply X, but Y" is the same antithesis and matched nothing ("Our objective is
+  # not simply to build a tool, but to change how we ship"). The window grew from 60 to 80
+  # characters because the infinitive form carries a longer X. "not just X but Y" was tried and
+  # dropped: across MAGE, FineWeb-edu, and the benchmark it matched 6 human rows and 2 AI rows
+  # ("not just the food, but", "Not just subwoofers, but"). PARALLEL_NOT_JUST keeps the
+  # "is not just X, it's Y" form.
   - rule_id: PARALLEL_NOT_MERELY_BUT
     severity: medium
-    pattern: "\\bnot merely\\b[^.?!]{1,60}?\\bbut\\b"
-    explanation: "'not merely X, but Y' antithesis (a 'not just' variant)."
+    pattern: "\\bnot (?:merely|simply)\\b[^.?!]{1,80}?\\bbut\\b"
+    explanation: "'not merely X, but Y' / 'not simply X, but Y' antithesis."
     source: "WP:AIPARALLEL"
+
+  # v0.16: "the X is not simply Y." without a "but" clause (Graphite: 576x the human rate in GPT-6
+  # Astra output; 0 human and 1 AI row in our corpora). A "but" within 80 characters is left to
+  # PARALLEL_NOT_MERELY_BUT so one span is never charged twice.
+  - rule_id: PARALLEL_IS_NOT_SIMPLY
+    severity: low
+    pattern: "\\b(?:is|are|was|were|isn't|aren't) not (?:simply|merely)\\b(?![^.?!]{0,80}\\bbut\\b)|\\b(?:isn't|aren't|wasn't) (?:simply|merely)\\b(?![^.?!]{0,80}\\bbut\\b)"
+    explanation: "'The X is not simply Y' — corrects a reading nobody offered."
+    source: "Graphite AI Tells (2026-09)"
 
   - rule_id: PARALLEL_LESS_ABOUT_MORE_ABOUT
     severity: medium
-    pattern: "\\bless about\\b[^.?!]{1,60}?\\b(?:and )?more about\\b"
+    # v0.16: "less like a X and more like a Y" (Graphite: 105x the human rate in Opus 5 output).
+    pattern: "\\bless (?:about|like)\\b[^.?!]{1,60}?\\b(?:and )?more (?:about|like)\\b"
     explanation: "'this is less about X and more about Y' contrast frame."
     source: "WP:AIPARALLEL"
 

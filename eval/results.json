@@ -1,7 +1,7 @@
 [
   {
     "name": "benchmark",
-    "path": "/Users/johnhodge/Documents/code/slopscore/eval/datasets/benchmark.jsonl",
+    "path": "eval/datasets/benchmark.jsonl",
     "eval_only": false,
     "n": 149,
     "rules": {
@@ -10,24 +10,24 @@
       "metrics": {
         "n": 149,
         "n_positive": 70,
-        "auroc": 0.8574,
-        "pr_auc": 0.8632,
+        "auroc": 0.8608,
+        "pr_auc": 0.8676,
         "tpr_at_1fpr": 0.3286,
-        "tpr_at_5fpr": 0.5714,
-        "ece": 0.213,
-        "brier": 0.2271
+        "tpr_at_5fpr": 0.5857,
+        "ece": 0.2095,
+        "brier": 0.2229
       },
       "selective": {
         "coverage": 0.0,
         "accuracy_covered": 0.0,
-        "accuracy_all": 0.6912751677852349
+        "accuracy_all": 0.697986577181208
       },
       "fairness": {
         "general": {
           "group": "general",
           "n": 111,
           "fpr": 0.0,
-          "fnr": 0.6323529411764706,
+          "fnr": 0.6176470588235294,
           "abstention_rate": 1.0
         },
         "non_native": {
@@ -52,12 +52,12 @@
       "metrics": {
         "n": 149,
         "n_positive": 70,
-        "auroc": 0.908,
-        "pr_auc": 0.9177,
+        "auroc": 0.9098,
+        "pr_auc": 0.9196,
         "tpr_at_1fpr": 0.5857,
-        "tpr_at_5fpr": 0.6286,
-        "ece": 0.0659,
-        "brier": 0.1188
+        "tpr_at_5fpr": 0.6429,
+        "ece": 0.0681,
+        "brier": 0.1175
       },
       "selective": {
         "coverage": 0.0,
@@ -92,7 +92,7 @@
   },
   {
     "name": "longform (300+ words, eval-only)",
-    "path": "/Users/johnhodge/Documents/code/slopscore/eval/datasets/longform.jsonl",
+    "path": "eval/datasets/longform.jsonl",
     "eval_only": true,
     "n": 180,
     "rules": {
@@ -101,12 +101,12 @@
       "metrics": {
         "n": 180,
         "n_positive": 60,
-        "auroc": 0.7033,
-        "pr_auc": 0.5913,
+        "auroc": 0.7081,
+        "pr_auc": 0.5986,
         "tpr_at_1fpr": 0.1333,
         "tpr_at_5fpr": 0.2333,
-        "ece": 0.2509,
-        "brier": 0.2778
+        "ece": 0.2505,
+        "brier": 0.2773
       },
       "selective": {
         "coverage": 1.0,
@@ -147,8 +147,8 @@
         "pr_auc": 0.5309,
         "tpr_at_1fpr": 0.0667,
         "tpr_at_5fpr": 0.15,
-        "ece": 0.2132,
-        "brier": 0.2505
+        "ece": 0.2131,
+        "brier": 0.2504
       },
       "selective": {
         "coverage": 1.0,
@@ -183,7 +183,7 @@
   },
   {
     "name": "wiki_aicleanup (held-out, eval-only)",
-    "path": "/Users/johnhodge/.cache/slopscore/wiki_aicleanup.jsonl",
+    "path": "~/.cache/slopscore/wiki_aicleanup.jsonl",
     "eval_only": true,
     "n": 180,
     "rules": {
@@ -192,12 +192,12 @@
       "metrics": {
         "n": 180,
         "n_positive": 90,
-        "auroc": 0.7461,
-        "pr_auc": 0.7697,
+        "auroc": 0.7516,
+        "pr_auc": 0.7759,
         "tpr_at_1fpr": 0.1111,
-        "tpr_at_5fpr": 0.3222,
-        "ece": 0.4151,
-        "brier": 0.4138
+        "tpr_at_5fpr": 0.3444,
+        "ece": 0.4148,
+        "brier": 0.4133
       },
       "selective": {
         "coverage": 0.9,
@@ -224,8 +224,8 @@
         "pr_auc": 0.8658,
         "tpr_at_1fpr": 0.2556,
         "tpr_at_5fpr": 0.4667,
-        "ece": 0.3782,
-        "brier": 0.3581
+        "ece": 0.378,
+        "brier": 0.3579
       },
       "selective": {
         "coverage": 0.9,
@@ -239,6 +239,69 @@
           "fpr": 0.0,
           "fnr": 0.9444444444444444,
           "abstention_rate": 0.1
+        }
+      }
+    },
+    "promote_ml": true
+  },
+  {
+    "name": "wiki_aicleanup tagged since 2026-07 (eval-only)",
+    "path": "~/.cache/slopscore/wiki_aicleanup_since2026-07.jsonl",
+    "eval_only": true,
+    "n": 180,
+    "rules": {
+      "scorer": "rules",
+      "profile": "blog",
+      "metrics": {
+        "n": 180,
+        "n_positive": 90,
+        "auroc": 0.4838,
+        "pr_auc": 0.468,
+        "tpr_at_1fpr": 0.0,
+        "tpr_at_5fpr": 0.0333,
+        "ece": 0.4275,
+        "brier": 0.4322
+      },
+      "selective": {
+        "coverage": 0.8722222222222222,
+        "accuracy_covered": 0.46496815286624205,
+        "accuracy_all": 0.5
+      },
+      "fairness": {
+        "wiki_since2026-07": {
+          "group": "wiki_since2026-07",
+          "n": 180,
+          "fpr": 0.0,
+          "fnr": 1.0,
+          "abstention_rate": 0.12777777777777777
+        }
+      }
+    },
+    "ml": {
+      "scorer": "ml",
+      "profile": "blog",
+      "metrics": {
+        "n": 180,
+        "n_positive": 90,
+        "auroc": 0.4834,
+        "pr_auc": 0.4944,
+        "tpr_at_1fpr": 0.0,
+        "tpr_at_5fpr": 0.0111,
+        "ece": 0.4267,
+        "brier": 0.4283
+      },
+      "selective": {
+        "coverage": 0.8722222222222222,
+        "accuracy_covered": 0.46496815286624205,
+        "accuracy_all": 0.5
+      },
+      "fairness": {
+        "wiki_since2026-07": {
+          "group": "wiki_since2026-07",
+          "n": 180,
+          "fpr": 0.0,
+          "fnr": 1.0,
+          "abstention_rate": 0.12777777777777777
         }
       }
     },

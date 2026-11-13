@@ -13,12 +13,12 @@ A **recommended `score_threshold`** is the smallest cutoff with pooled false-pos
 
 | profile | n clean | n slop | clean P50 | P90 | P95 | P99 | recommended | FPR | TPR |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| blog | 522 | 90 | 7.5 | 10.0 | 11.7 | 15.5 | 25.0 | 0.01 | 0.01 |
-| essay | 522 | 90 | 7.6 | 10.2 | 11.6 | 15.7 | 25.0 | 0.01 | 0.01 |
-| academic | 522 | 90 | 7.5 | 9.7 | 11.2 | 14.6 | 25.0 | 0.01 | 0.01 |
-| marketing | 522 | 90 | 7.5 | 9.6 | 10.9 | 14.4 | 25.0 | 0.01 | 0.01 |
-| technical | 522 | 90 | 7.4 | 9.4 | 10.7 | 13.8 | 25.0 | 0.01 | 0.01 |
-| social | 522 | 90 | 7.5 | 10.0 | 11.5 | 15.1 | 25.0 | 0.01 | 0.01 |
+| blog | 522 | 90 | 7.5 | 10.0 | 11.8 | 15.8 | 25.0 | 0.01 | 0.01 |
+| essay | 522 | 90 | 7.6 | 10.3 | 11.9 | 16.6 | 25.0 | 0.01 | 0.01 |
+| academic | 522 | 90 | 7.5 | 9.7 | 11.3 | 15.5 | 25.0 | 0.01 | 0.01 |
+| marketing | 522 | 90 | 7.5 | 9.6 | 11.0 | 14.6 | 25.0 | 0.01 | 0.01 |
+| technical | 522 | 90 | 7.4 | 9.4 | 10.9 | 14.0 | 25.0 | 0.01 | 0.01 |
+| social | 522 | 90 | 7.6 | 10.1 | 11.6 | 16.0 | 25.0 | 0.01 | 0.01 |
 
 ## Cutoff sweep (pooled)
 
@@ -124,27 +124,27 @@ A **recommended `score_threshold`** is the smallest cutoff with pooled false-pos
 
 | subgroup | pooled | n clean | n slop | clean P50 | P90 | P95 | FPR | TPR |
 |---|---|---:|---:|---:|---:|---:|---:|---:|
-| arxiv_pre2022 | yes | 150 | 0 | 8.2 | 12.5 | 14.4 | 0.02 | n/a |
+| arxiv_pre2022 | yes | 150 | 0 | 8.2 | 12.8 | 14.6 | 0.02 | n/a |
 | gutenberg | no | 120 | 0 | 7.5 | 10.2 | 11.3 | 0.00 | n/a |
 | web_edu_pre2022 | yes | 150 | 0 | 7.6 | 9.3 | 10.6 | 0.00 | n/a |
 | wiki | yes | 72 | 90 | 7.3 | 8.0 | n/a | 0.00 | 0.01 |
-| wiki_2023 | yes | 150 | 0 | 7.1 | 7.7 | 8.1 | 0.00 | n/a |
+| wiki_2023 | yes | 150 | 0 | 7.1 | 7.8 | 8.1 | 0.00 | n/a |
 
 ### essay
 
 | subgroup | pooled | n clean | n slop | clean P50 | P90 | P95 | FPR | TPR |
 |---|---|---:|---:|---:|---:|---:|---:|---:|
-| arxiv_pre2022 | yes | 150 | 0 | 8.6 | 12.9 | 14.6 | 0.02 | n/a |
+| arxiv_pre2022 | yes | 150 | 0 | 8.6 | 13.0 | 14.7 | 0.02 | n/a |
 | gutenberg | no | 120 | 0 | 7.5 | 9.9 | 10.8 | 0.00 | n/a |
 | web_edu_pre2022 | yes | 150 | 0 | 7.7 | 9.3 | 10.4 | 0.00 | n/a |
 | wiki | yes | 72 | 90 | 7.3 | 8.1 | n/a | 0.00 | 0.01 |
-| wiki_2023 | yes | 150 | 0 | 7.1 | 7.8 | 8.0 | 0.00 | n/a |
+| wiki_2023 | yes | 150 | 0 | 7.1 | 7.9 | 8.0 | 0.00 | n/a |
 
 ### academic
 
 | subgroup | pooled | n clean | n slop | clean P50 | P90 | P95 | FPR | TPR |
 |---|---|---:|---:|---:|---:|---:|---:|---:|
-| arxiv_pre2022 | yes | 150 | 0 | 8.5 | 12.5 | 14.0 | 0.02 | n/a |
+| arxiv_pre2022 | yes | 150 | 0 | 8.5 | 12.6 | 14.2 | 0.02 | n/a |
 | gutenberg | no | 120 | 0 | 7.5 | 9.4 | 10.2 | 0.00 | n/a |
 | web_edu_pre2022 | yes | 150 | 0 | 7.7 | 9.1 | 10.1 | 0.00 | n/a |
 | wiki | yes | 72 | 90 | 7.3 | 8.1 | n/a | 0.00 | 0.01 |
@@ -154,17 +154,17 @@ A **recommended `score_threshold`** is the smallest cutoff with pooled false-pos
 
 | subgroup | pooled | n clean | n slop | clean P50 | P90 | P95 | FPR | TPR |
 |---|---|---:|---:|---:|---:|---:|---:|---:|
-| arxiv_pre2022 | yes | 150 | 0 | 8.5 | 11.9 | 13.4 | 0.02 | n/a |
+| arxiv_pre2022 | yes | 150 | 0 | 8.5 | 12.1 | 13.8 | 0.02 | n/a |
 | gutenberg | no | 120 | 0 | 7.5 | 8.9 | 9.4 | 0.00 | n/a |
 | web_edu_pre2022 | yes | 150 | 0 | 7.7 | 8.9 | 9.6 | 0.00 | n/a |
 | wiki | yes | 72 | 90 | 7.2 | 8.1 | n/a | 0.00 | 0.01 |
-| wiki_2023 | yes | 150 | 0 | 7.1 | 7.7 | 7.9 | 0.00 | n/a |
+| wiki_2023 | yes | 150 | 0 | 7.1 | 7.8 | 7.9 | 0.00 | n/a |
 
 ### technical
 
 | subgroup | pooled | n clean | n slop | clean P50 | P90 | P95 | FPR | TPR |
 |---|---|---:|---:|---:|---:|---:|---:|---:|
-| arxiv_pre2022 | yes | 150 | 0 | 8.0 | 11.3 | 13.1 | 0.02 | n/a |
+| arxiv_pre2022 | yes | 150 | 0 | 8.0 | 11.4 | 13.1 | 0.02 | n/a |
 | gutenberg | no | 120 | 0 | 7.4 | 9.3 | 10.2 | 0.00 | n/a |
 | web_edu_pre2022 | yes | 150 | 0 | 7.5 | 9.0 | 9.7 | 0.00 | n/a |
 | wiki | yes | 72 | 90 | 7.2 | 7.8 | n/a | 0.00 | 0.01 |
@@ -174,8 +174,8 @@ A **recommended `score_threshold`** is the smallest cutoff with pooled false-pos
 
 | subgroup | pooled | n clean | n slop | clean P50 | P90 | P95 | FPR | TPR |
 |---|---|---:|---:|---:|---:|---:|---:|---:|
-| arxiv_pre2022 | yes | 150 | 0 | 8.6 | 12.7 | 14.4 | 0.02 | n/a |
-| gutenberg | no | 120 | 0 | 7.5 | 9.3 | 10.2 | 0.00 | n/a |
+| arxiv_pre2022 | yes | 150 | 0 | 8.6 | 12.7 | 14.6 | 0.02 | n/a |
+| gutenberg | no | 120 | 0 | 7.5 | 9.5 | 10.2 | 0.00 | n/a |
 | web_edu_pre2022 | yes | 150 | 0 | 7.7 | 9.1 | 10.1 | 0.00 | n/a |
 | wiki | yes | 72 | 90 | 7.2 | 8.1 | n/a | 0.00 | 0.01 |
 | wiki_2023 | yes | 150 | 0 | 7.1 | 7.8 | 8.0 | 0.00 | n/a |

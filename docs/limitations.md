@@ -15,6 +15,16 @@ formulaic, generic, low-specificity, over-polished patterns, which occur in low-
 - **Short text** (< ~300 words) is unreliable; under ~100 words the label abstains.
 - **Genre** matters: marketing and travel prose naturally resemble slop. Use `--profile`.
 - **Light paraphrasing** evades pattern matching, as it does all detectors.
+- **The rules age with the models.** Most rules were written from 2023-25 model output, and the
+  newest models drop many of those habits (em dashes, "delve", "In summary"). On Wikipedia
+  articles tagged as suspected AI text from July 2026 on, the rules do no better than chance.
+  See `MODEL_CARD.md` for the numbers.
+- **A low score does not mean a document is ready.** slopscore scores phrases, sentences, and
+  Markdown block shapes. It does not judge document structure: whether a thesis is restated in
+  every section, whether the evidence comes before or after the framing, or whether a headline
+  figure is ever derived. A reader found a 5,000-word design document inflated and repetitive
+  after it scored under 10. [Patterns slopscore does not score](unscored-patterns.md) lists
+  what to check by hand.
 
 See the project `MODEL_CARD.md` for measured numbers and the real-corpus (MAGE) experiment.
 

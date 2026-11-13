@@ -61,6 +61,14 @@ Vocabulary drifts by model era (GPT-4 → GPT-4o → GPT-5); the lexicon tags te
   design. The rules report the spans; the corroboration gate keeps the label down, because the
   same register is ordinary human op-ed writing and no benchmark slice yet measures it.
 - **Adversarial edits.** Light paraphrasing evades pattern matching, as it does all detectors.
+- **The rules age with the models.** Most rules were written from 2023-25 output. The October
+  2026 revision of WP:AISIGNS lists em dashes, knowledge-cutoff phrases, and "In summary" as
+  historical indicators, and Graphite's September 2026 study measured the eleven best-known tells
+  falling 41-86% per 1,000 words between the oldest and newest model in each family. On 90
+  Wikipedia articles tagged as suspected AI text from July 2026 on, against 90 random current
+  articles, the rules score AUROC 0.484: no better than chance. That slice is weak evidence
+  (editors may have cleaned a page after tagging it, and random current articles can contain AI
+  text), but nothing in the evaluation shows the rules work on 2026 output.
 - **Coverage.** Wikipedia/markup-specific and authorship-signal tells are intentionally excluded;
   slopscore is a general-prose tool.
 

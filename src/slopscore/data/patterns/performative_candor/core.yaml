@@ -107,3 +107,15 @@ rules:
     pattern: "\\b(?:I(?:'?m| am) (?:going to |gonna )?push(?:ing)? back on (?:that|this|it)|let me push back|I want to push back)\\b"
     explanation: "'I'm pushing back on that' — announces disagreement as an act of candor."
     source: "AI-tell (2024-2026)"
+
+  # v0.16: "is genuinely" (Graphite, 2026-09: 1,021 uses in Opus 5 output against 4 in the human
+  # set). Only where the adverb vouches for a claim about a thing: "is genuinely the hard part",
+  # "is genuinely not worth it", "was genuinely a surprise". A person's state ("was genuinely
+  # careful", "genuinely surprised") is the bare adverb, which stays in the --broad tier, and
+  # the evaluative adjectives belong to CANDOR_SINCERITY_COLLOCATION. 0 human and 0 AI rows in
+  # the corpora after this gating.
+  - rule_id: CANDOR_IS_GENUINELY
+    severity: low
+    pattern: "\\b(?:is|are|was|were) genuinely (?:the|a|an|one of|not|worth|different|new to|unclear|open)\\b"
+    explanation: "'is genuinely the hard part' — sincerity adverb vouching for a claim instead of supporting it."
+    source: "Graphite AI Tells (2026-09)"

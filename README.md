@@ -43,6 +43,10 @@ Rule-driven dimensions carry an evidence span for every hit. The four statistica
 corroborate a weak tell, and point at the passage that drove them with a labeled summary span;
 the JSON `breakdown` attributes every point of the score to a dimension.
 
+A low score is not a clean document. slopscore does not judge document structure, such as a
+thesis restated in every section; [docs/unscored-patterns.md](docs/unscored-patterns.md) lists
+those patterns and how to check them by hand.
+
 ## Install
 
 ```bash
@@ -156,7 +160,7 @@ slopscore-lint scan post.md --format html -o report.html          # highlighted-
 ```yaml
 repos:
   - repo: https://github.com/jman4162/slopscore
-    rev: v0.14.3
+    rev: v0.16.0
     hooks:
       - id: slopscore-lint
         args: ["--fail-on", "high"]

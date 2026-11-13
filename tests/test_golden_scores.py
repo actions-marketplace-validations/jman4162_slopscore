@@ -105,11 +105,25 @@ LONGFORM_BURIED_RUN = (
     "is the one that separates the cases.\n\n" + _FACTS * 12
 )
 
-LONGFORM_SIGNPOSTED_CLEAN = (
+# Each copy names different provinces and rates: eight verbatim copies of the long sentence are
+# a real repeat (REDUNDANT_REPEATED_SENTENCE), which is not what this fixture is testing.
+_PROVINCES = [
+    ("Ontario", 61, "Quebec", 48),
+    ("Manitoba", 57, "Alberta", 44),
+    ("Nova Scotia", 63, "Yukon", 39),
+    ("Saskatchewan", 52, "Nunavut", 31),
+    ("New Brunswick", 66, "British Columbia", 46),
+    ("Prince Edward Island", 70, "Newfoundland", 41),
+    ("the Northwest Territories", 35, "Labrador", 58),
+    ("Toronto", 49, "Montreal", 54),
+]
+LONGFORM_SIGNPOSTED_CLEAN = "".join(
     "In this section we describe the sampling frame. We drew 2,400 households from the 2019 "
-    "register. As noted above, the response rate was 61 percent in Ontario and 48 percent in "
-    "Quebec. In other words, roughly three in five contacted households returned the form. "
-) * 8
+    f"register. As noted above, the response rate was {a_rate} percent in {a} and {b_rate} "
+    f"percent in {b}. In other words, roughly three in five contacted households returned the "
+    "form. "
+    for a, a_rate, b, b_rate in _PROVINCES
+)
 
 
 def test_long_form_buried_run_is_caught() -> None:
